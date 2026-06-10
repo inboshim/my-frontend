@@ -1,5 +1,7 @@
 # 📦 자급자족형 금융 AI 분석 대시보드 (React 프론트엔드)
 
+https://github.com/user-attachments/assets/7b3d356d-42aa-4ce9-91b0-c5a8775b207e
+
 본 저장소는 로컬 비동기 백엔드 서버에서 초고속으로 뿜어져 나오는 금융 분석 데이터와 AI 위험 징후 리포트를 사용자에게 직관적으로 전달하는 대기업 실무형 금융 대시보드 화면입니다.
 
 ## 🛠️ Tech Stacks

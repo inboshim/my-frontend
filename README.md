@@ -1,70 +1,24 @@
-# Getting Started with Create React App
+# 📦 자급자족형 금융 AI 분석 대시보드 (React 프론트엔드)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+본 저장소는 로컬 비동기 백엔드 서버에서 초고속으로 뿜어져 나오는 금융 분석 데이터와 AI 위험 징후 리포트를 사용자에게 직관적으로 전달하는 대기업 실무형 금융 대시보드 화면입니다.
 
-## Available Scripts
+## 🛠️ Tech Stacks
+- **Library:** React.js (Component-Driven Architecture)
+- **Styling:** CSS Grid & Flexbox (정밀 바둑판 레이아웃)
+- **State Management:** React Hooks (useEffect, useState 실시간 연동)
+- **Build Tool:** Node.js & NPM
 
-In the project directory, you can run:
+## 📐 핵심 UI/UX 컴포넌트 엔지니어링
+1. **2열 1행 바둑판 그리드 레이아웃:** 
+   화면 찌그러짐을 원천 차단하는 정밀 격자 구조를 채택하여 좌측에는 원본 데이터 분석 지표를, 우측에는 AI 스트리밍 리포트를 컴팩트하게 매핑했습니다.
+2. **🔴 필수 체크 황금 카드 하이라이팅 (핵심 기능):** 
+   로컬 LLM이 금융 보고서 내부에서 임계치를 넘는 리스크 및 위험 징후를 감지하는 즉시, 해당 대시보드 카드의 테두리를 황금빛 하이라이트로 강제 전환하여 대리~부장 등 인간 관리자 없이 시스템 스스로 크리티컬한 의존성을 강조하도록 구현했습니다.
 
-### `npm start`
+## 🚀 Quick Start
+```cmd
+# 1. 무거운 의존성 라이브러리 청정 자동 재설치
+npm install
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+# 2. 리액트 대시보드 개발 서버 가동
+npm start
+```

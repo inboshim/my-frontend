@@ -1,0 +1,127 @@
+/* src/styles/LoginPage.css */
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  /* 메인 사이드바와 통일감을 주는 딥 네이비 그라데이션 배경 */
+  background: linear-gradient(135deg, #0f1222 0%, #1a1f36 100%);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 45px 40px;
+  border-radius: 16px;
+  /* 유리막 느낌의 은은한 다크 카드 디자인 */
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  text-align: center;
+}
+
+.login-title {
+  margin: 0 0 8px 0;
+  color: #ffffff;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.login-subtitle {
+  margin: 0 0 24px 0;
+  color: #a3b1cc; /* MainLayout 메뉴 글자색과 통일 */
+  font-size: 14px;
+}
+
+/* 안내 박스 스타일 업그레이드 */
+.hint-box {
+  background-color: rgba(84, 105, 212, 0.15);
+  border: 1px solid rgba(84, 105, 212, 0.3);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  font-size: 13px;
+  color: #8da2fb;
+  text-align: left;
+  line-height: 1.5;
+}
+
+.hint-box code {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.login-form {
+  text-align: left;
+}
+
+.input-group {
+  margin-bottom: 20px;
+}
+
+.input-label {
+  display: block;
+  margin-bottom: 8px;
+  color: #e3e8f3;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.login-input {
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: 8px;
+  /* 어두운 테마에 어울리는 인풋 스타일 */
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: #5469d4;
+  background-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(84, 105, 212, 0.25);
+}
+
+/* 플레이스홀더(미리보기 글자) 색상 조절 */
+.login-input::placeholder {
+  color: #697386;
+}
+
+.error-text {
+  color: #ff5c75;
+  font-size: 13px;
+  margin: 0 0 16px 0;
+  font-weight: 500;
+}
+
+.login-button {
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
+  border: none;
+  background-color: #5469d4;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-sizing: border-box;
+  margin-top: 5px;
+}
+
+.login-button:hover {
+  background-color: #4354b5;
+  box-shadow: 0 4px 12px rgba(84, 105, 212, 0.3);
+}

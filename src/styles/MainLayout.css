@@ -1,0 +1,77 @@
+/* src/styles/MainLayout.css */
+
+.layout-container {
+  display: flex;
+  min-height: 100vh;
+  font-family: sans-serif;
+}
+
+/* 왼쪽 사이드바 영역 */
+.sidebar {
+  width: 250px;
+  background-color: #1a1f36;
+  padding: 30px 20px;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.sidebar-title {
+  margin: 0 0 40px 0;
+  font-size: 20px;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 메뉴 링크 스타일 */
+.nav-link {
+  display: block;
+  padding: 12px 15px;
+  color: #a3b1cc;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.2s ease-in-out;
+}
+
+.nav-link:hover {
+  color: #ffffff;
+  background-color: #2a314e;
+}
+
+/* 로그아웃 버튼 스타일 */
+.logout-button {
+  width: 100%;
+  padding: 12px;
+  background: none;
+  border: 1px solid #df1b41;
+  color: #df1b41;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s ease-in-out;
+  box-sizing: border-box;
+}
+
+.logout-button:hover {
+  background-color: #df1b41;
+  color: #ffffff;
+}
+
+/* 오른쪽 업무 콘텐츠 영역 */
+.content-area {
+  flex: 1;
+  padding: 40px;
+  background-color: #f5f7fb;
+  box-sizing: border-box;
+}

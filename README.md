@@ -1,4 +1,4 @@
-# 📦 자급자족형 금융 AI 분석 대시보드 (React 프론트엔드)
+# 📦 금융 리서치 PDF AI 분석 대시보드 (React 프론트엔드)
 
 https://github.com/user-attachments/assets/7b3d356d-42aa-4ce9-91b0-c5a8775b207e
 

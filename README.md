@@ -1,4 +1,4 @@
-# 📦 금융 리서치 PDF AI 분석 대시보드 (React 프론트엔드)
+# "FastAPI + SSE 기술을 적용하여 프론트 리소스를 최적화한 실시간 스트리밍 구현 영상"
 
 https://github.com/user-attachments/assets/7b3d356d-42aa-4ce9-91b0-c5a8775b207e
 

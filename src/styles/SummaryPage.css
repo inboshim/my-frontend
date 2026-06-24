@@ -1,126 +1,21 @@
-/* src/styles/SummaryPage.css */
+/* === src/styles/SummaryPage.css 맨 하단 전면 리뉴얼 === */
 
+/* 🌟 [가독성 밸런싱 마스터 키]: 모니터가 아무리 커져도 눈이 편안한 최적의 금융권 그리드 폭 고정 */
 .summary-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  font-family: sans-serif;
-}
-
-/* 상단 타이틀 및 모델 배지 */
-.summary-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 30px;
-  padding-bottom: 15px;
-  border-bottom: 2px solid #e3e8f3;
-}
-
-.summary-title {
-  margin: 0;
-  color: #1a1f36;
-  font-size: 24px;
-  font-weight: 700;
-}
-
-.model-badge {
-  background-color: #e8f0fe;
-  color: #1a73e8;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
-  border: 1px solid #d2e3fc;
-}
-
-/* 메인 콘텐츠 영역 (반반 분할) */
-.summary-content {
-  display: flex;
-  gap: 30px;
-}
-
-.content-box {
-  flex: 1;
-  background-color: #ffffff;
-  border-radius: 12px;
-  padding: 30px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e3e8f3;
-  min-height: 450px;
+  width: 100% !important;
+  max-width: 1350px !important; /* 🚀 무제한 확장을 막고 시니어 분석가용 가독성 최적화 폭으로 고정 */
+  margin: 0 !important;          /* 왼쪽 정렬을 고수하여 사이드바와 기분 좋은 연속성 유지 */
   display: flex;
   flex-direction: column;
+  align-items: stretch !important;
+  gap: 24px;
 }
 
-.box-title {
-  margin: 0 0 20px 0;
-  font-size: 16px;
-  color: #3c4257;
-  font-weight: 600;
-}
-
-/* 파일 업로드 드롭존 */
-.upload-zone {
-  flex: 1;
-  border: 2px dashed #b5c2d9;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  background-color: #f8fafc;
-  transition: all 0.2s ease;
-  padding: 20px;
-}
-
-.upload-zone:hover {
-  border-color: #5469d4;
-  background-color: #f0f4ff;
-}
-
-.upload-icon {
-  font-size: 40px;
-  margin-bottom: 15px;
-}
-
-/* 요약 결과 출력창 */
-.result-zone {
-  flex: 1;
-  background-color: #f8fafc;
-  border: 1px solid #e3e8f3;
-  border-radius: 8px;
-  padding: 20px;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #3c4257;
-  overflow-y: auto;
-  white-space: pre-wrap; /* 줄바꿈 유지 */
-}
-
-/* 상태별 진행 바 및 버튼 */
-.progress-container {
-  margin-top: 15px;
-}
-
-.action-button {
-  width: 100%;
-  padding: 12px;
-  background-color: #5469d4;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  margin-top: auto;
-}
-
-.action-button:hover {
-  background-color: #4354b5;
-}
-
-.action-button:disabled {
-  background-color: #a3b1cc;
-  cursor: not-allowed;
+/* 개별 카드 블록들이 1350px 안에서 균형감 있게 꽉 채워지도록 연동 */
+.dashboard-header-card, 
+.report-result-card,
+div[class*="-card"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
 }

@@ -186,12 +186,12 @@ function SummaryPage() {
     }
   };
   return (
-    <div style={{ padding: '10px 20px', maxWidth: '1200px', margin: '0 auto', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', boxSizing: 'border-box', position: 'relative' }}>
+    <div className="summary-container">
       
       {/* 상단 대시보드 타이틀 헤더 (여백 긴밀 축소 패치) */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid #eef2f7', paddingBottom: '6px' }}>
         <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#1a1f36', letterSpacing: '-0.5px' }}>
-          📄 금융 레포트 실시간 AI 요약 대시보드
+          실시간 AI 요약 대시보드
         </h2>
         <span style={{ backgroundColor: '#eef2f7', color: '#5469d4', padding: '5px 12px', borderRadius: '30px', fontSize: '11.5px', fontWeight: '600' }}>
           Active Model: Qwen2.5-1.5B (CUDA-Citation)
@@ -209,13 +209,13 @@ function SummaryPage() {
                 {fileName} (선택 완료)
               </span>
             ) : (
-              <span style={{ color: '#697386', fontSize: '13px' }}>분석할 월가 영문 레포트(PDF) 파일을 선택해 주세요</span>
+              <span style={{ color: '#697386', fontSize: '13px' }}>금융 리서치 영문 파일(PDF)을 선택해 주세요</span>
             )}
             <input id="summary-file-input" type="file" accept=".pdf" onChange={handleFileChange} disabled={!!selectedFile || isUploading} style={{ display: 'none' }} />
           </label>
 
           <button disabled={!selectedFile || isUploading} onClick={handleStartSummary} style={{ backgroundColor: !selectedFile ? '#a3b1cc' : '#5469d4', color: '#fff', border: 'none', borderRadius: '6px', height: '100%', padding: '0 25px', fontWeight: '600', fontSize: '13.5px', cursor: !selectedFile || isUploading ? 'not-allowed' : 'pointer', minWidth: '180px', margin: 0 }}>
-            {isUploading ? 'AI 분석 중...' : 'AI 레포트 요약 시작'}
+            {isUploading ? 'AI 분석 중...' : 'AI 한글 요약 시작'}
           </button>
 
           <button 
@@ -246,8 +246,8 @@ function SummaryPage() {
 
       {/* 하단 리포트 결과창 구역 */}
       <div style={{ backgroundColor: '#fff', border: '1px solid #e3e8ee', borderRadius: '8px', padding: '20px 25px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)', minHeight: 'calc(100vh - 160px)', boxSizing: 'border-box' }}>
-        <h3 style={{ margin: '0 0 12px 0', fontSize: '14.5px', fontWeight: '600', color: '#1a1f36', borderBottom: '1px solid #eef2f7', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span>📋</span> 금융 AI 분석 결과 리포트
+        <h3 style={{ margin: '0 0 12px 0', fontSize: '14.5px', fontWeight: '500', color: '#1a1f36', borderBottom: '1px solid #eef2f7', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span></span> [중요 키워드] : "투자", "전략", "상승", "성장", "배분", "수치", "마진", "수익", "BUY" 를 기준으로 실기간 AI 분석합니다.
         </h3>
         
         {summaryResult && (
@@ -398,7 +398,7 @@ function SummaryPage() {
             })
           ) : !summaryResult && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '300px', color: '#a3b1cc', fontStyle: 'italic', fontSize: '13.5px' }}>
-              <span>📢 상단 제어 바에서 글로벌 리서치 파일을 등록하고 요약 시작 버튼을 클릭해 주세요.</span>
+              <span>1. 금융 리서치 영문 파일(PDF) 선택.   2. "AI 한글 요약 시작" 버튼을 실행해 주세요.</span>             
             </div>
           )}
         </div>

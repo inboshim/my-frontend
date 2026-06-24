@@ -1,77 +1,165 @@
-/* src/styles/MainLayout.css */
+/* === src/index.css 구글 제미나이 초고가시성 렌더링 완전판 === */
 
 .layout-container {
-  display: flex;
-  min-height: 100vh;
-  font-family: sans-serif;
+  display: flex !important;
+  min-height: 100vh !important;
+  width: 100vw !important;
+  /* 🚀 [최고 등급 선명화 폰트 가드]: 글자와 아이콘의 테두리가 깨지거나 뿌옇게 번지는 현상을 원천 방어 */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  text-rendering: optimizeLegibility !important;
+  overflow: hidden !important;
+  background-color: #f8fafc !important;
 }
 
-/* 왼쪽 사이드바 영역 */
+/* 🚀 [제미나이 72px 콤팩트 사이드바 인프라] */
 .sidebar {
-  width: 250px;
-  background-color: #1a1f36;
-  padding: 30px 20px;
-  color: #ffffff;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  box-sizing: border-box;
+  width: 72px !important;
+  min-width: 72px !important;
+  max-width: 72px !important;
+  background-color: #ffffff !important;
+  padding: 24px 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  box-sizing: border-box !important;
+  align-items: center !important;
+  border-right: 1px solid #e5e7eb !important; /* 구글 특유의 미세한 그레이 절단선 */
+  box-shadow: none !important;
 }
 
-.sidebar-title {
-  margin: 0 0 40px 0;
-  font-size: 20px;
-  text-align: center;
-  letter-spacing: 1px;
+/* 최상단 브랜드 로고 마크 영역 */
+.sidebar-brand-area {
+  margin-bottom: 36px !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+/* 🏛️ 최상단 기하학 창 마크: 하드웨어 가속 발광 */
+.brand-icon {
+  color: #1a73e8 !important; /* 구글 마스터 블루 */  
 }
 
 .sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  align-items: center !important;
+  width: 100% !important;
 }
 
-/* 메뉴 링크 스타일 */
+/* 🚀 [제미나이 둥근 원형 단추] 정사각형을 버리고 완벽한 48px 정원 매핑 */
 .nav-link {
-  display: block;
-  padding: 12px 15px;
-  color: #a3b1cc;
-  text-decoration: none;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 15px;
-  transition: all 0.2s ease-in-out;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 48px !important;
+  height: 48px !important;
+  color: #3c4043 !important;     /* ⚡ 흐릿함을 전면 격파하는 구글 표준 묵직한 차콜 블랙 */
+  text-decoration: none !important;
+  border-radius: 50% !important; /* 완벽한 동그라미 원형 링 구조 */
+  border: none !important;
+  transition: background-color 0.1s ease-in-out, color 0.1s ease-in-out !important;
 }
 
+/* 🌟 [제미나이 픽셀 오디팅 레이어]: 아이콘 선의 두께와 선명도를 하드웨어 드라이버 레벨에서 강제 팽창 */
+.sidebar svg, 
+.nav-link svg, 
+.logout-button svg {
+  stroke-width: 2.6 !important;   /* ⚡ 두께를 2.6으로 웅장하게 키워 제미나이와 선 두께를 1:1 일치화 */
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  image-rendering: -webkit-optimize-contrast !important; /* 브라우저 대비 가속 엔진 가동 */
+  image-rendering: crisp-edges !important;               /* 외곽선 픽셀 뭉개짐 제거 */
+  shape-rendering: geometricPrecision !important;       /* 기하학적 정밀도 하드웨어 가속 */
+  filter: none !important;
+}
+
+/* ⚡ [제미나이 호버 피드백] 마우스 오버 시 구글 블루 조명 가동 */
 .nav-link:hover {
-  color: #ffffff;
-  background-color: #2a314e;
+  color: #1a73e8 !important; 
+  background-color: #f1f3f4 !important; /* 구글 표준 연회색 원형 배경 오버레이 */
 }
 
-/* 로그아웃 버튼 스타일 */
+/* ⚡ [현재 페이지 활성화] 선택된 메뉴 아이콘은 뚜렷하게 구글 블루 서클 락 */
+.nav-link.active {
+  color: #1a73e8 !important; 
+  background-color: #e8f0fe !important; /* 구글 고유의 연한 블루 활성화 배경 원 */
+}
+
+/* 어드민 거버넌스 전용 스퀘어 스타일의 모노톤 완전 일치 (유색 번짐 차단) */
+.nav-link.admin-highlight {
+  color: #3c4043 !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
+.nav-link.admin-highlight:hover {
+  color: #1a73e8 !important;
+  background-color: #f1f3f4 !important;
+}
+
+.nav-link.admin-highlight.active {
+  color: #1a73e8 !important;
+  background-color: #e8f0fe !important;
+}
+
+/* 🔓 시스템 로그아웃 단추: 구글 레드 표준 매핑 */
 .logout-button {
-  width: 100%;
-  padding: 12px;
-  background: none;
-  border: 1px solid #df1b41;
-  color: #df1b41;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  transition: all 0.2s ease-in-out;
-  box-sizing: border-box;
+  width: 48px !important;
+  height: 48px !important;
+  background: none !important;
+  border: none !important;
+  color: #d93025 !important;    /* 구글 표준 경고 레드 */
+  border-radius: 50% !important; /* 원형 통일 */
+  cursor: pointer !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  transition: all 0.15s ease-in-out !important;
 }
 
 .logout-button:hover {
-  background-color: #df1b41;
-  color: #ffffff;
+  background-color: #fce8e6 !important; /* 구글 연홍색 오버레이 */
+  color: #a51d24 !important;
 }
 
-/* 오른쪽 업무 콘텐츠 영역 */
+.sidebar-bottom-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  width: 100% !important;
+  align-items: center !important;
+}
+
+.admin-menu-section {
+  padding-top: 12px !important;
+  border-top: 1px solid #e5e7eb !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+/* 🏢 [오른쪽 메인 업무 도화지] 1350px 그리드 거버넌스 */
 .content-area {
-  flex: 1;
-  padding: 40px;
-  background-color: #f5f7fb;
-  box-sizing: border-box;
+  flex: 1 !important;
+  width: calc(100vw - 72px) !important;
+  height: 100vh !important;
+  padding: 40px !important;
+  background-color: #f8fafc !important;
+  box-sizing: border-box !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+}
+
+.content-area > div {
+  width: 100% !important;
+  max-width: 1350px !important;  
+  box-sizing: border-box !important;
 }

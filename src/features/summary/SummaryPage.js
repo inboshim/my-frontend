@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
+import { ShieldCheck, Copy, RefreshCw } from 'lucide-react'; // 아이콘 체인 유지
+import AuditModal from '../rag/AuditModal'; // 위에서 만든 모달 임포트
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -26,6 +28,10 @@ function SummaryPage() {
   const [modalPos, setModalPos] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  // 모달 제어를 위한 실시간 트리거 상태 선언
+  const [isAuditOpen, setIsAuditOpen] = useState(false);
+  const [currentQuery, setCurrentQuery] = useState("최신 AI 트렌드 및 벡터 DB 성능 검증"); // 실제 입력된 질의어 바인딩
 
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
@@ -64,6 +70,7 @@ function SummaryPage() {
     setScale(1.0);
     setIsOpenModal(false);
     setModalPos({ x: 0, y: 0 });
+    setIsAuditOpen(false);
     
     const fileInput = document.getElementById('summary-file-input');
     if (fileInput) fileInput.value = '';
@@ -98,6 +105,16 @@ function SummaryPage() {
 
   const handleMouseUp = () => {
     setIsDragging(false);
+  };
+
+  const handleStartAudit = () => {
+    
+    console.log("파일선택유무 : 파일업로드 유무", selectedFile + " : "+ isUploading);    
+
+    if (!selectedFile || isUploading) return;
+
+    setIsAuditOpen(true);
+
   };
 
   const handleStartSummary = async () => {
@@ -223,7 +240,15 @@ function SummaryPage() {
             onClick={() => { setPageNumber(1); setInputPage('1'); setIsOpenModal(true); }}
             style={{ backgroundColor: !selectedFile ? '#f4f6f8' : '#fff', color: !selectedFile ? '#a3b1cc' : '#4f566b', border: '1px solid #cfd7df', borderRadius: '6px', height: '100%', padding: '0 18px', fontWeight: '500', fontSize: '13.5px', cursor: !selectedFile ? 'not-allowed' : 'pointer', margin: 0 }}
           >
-            📄 원본 문서 보기
+            원본 문서 보기
+          </button>          
+          <button
+            disabled={isUploading}
+            onClick={handleStartAudit}
+            style={{ backgroundColor: !selectedFile ? '#f4f6f8' : '#fff', color: !selectedFile ? '#a3b1cc' : '#4f566b', border: '1px solid #cfd7df', borderRadius: '6px', height: '100%', padding: '0 25px', fontWeight: '600', fontSize: '13.5px', cursor: isUploading ? 'not-allowed' : 'pointer', minWidth: '180px', margin: 0 }}
+                        
+          >
+            파이프라인 상태 확인
           </button>
 
           <button disabled={isUploading} onClick={handleReset} style={{ backgroundColor: '#fff', color: '#4f566b', border: '1px solid #cfd7df', borderRadius: '6px', height: '100%', padding: '0 20px', fontWeight: '500', fontSize: '13.5px', cursor: isUploading ? 'not-allowed' : 'pointer', margin: 0 }}>
@@ -356,7 +381,8 @@ function SummaryPage() {
                       )}
                     </div>
 
-                    {pageDisplayNum ? (
+                    {pageDisplayNum ? (                      
+
                       <button
                         onClick={() => {
                           const targetPage = parseInt(pageDisplayNum, 10);
@@ -374,7 +400,8 @@ function SummaryPage() {
                         onMouseOut={(e) => { e.target.style.backgroundColor = isImportantPage ? '#1a2f36' : '#007bbf'; e.target.style.transform = 'translateY(0)'; }}
                       >
                         📖 원문 {pageDisplayNum}쪽 확인하기
-                      </button>
+                      </button>                          
+                      
                     ) : (
                       <span style={{ fontSize: '11px', color: '#a3b1cc', fontStyle: 'italic' }}>추론 대기 중..</span>
                     )}
@@ -457,9 +484,17 @@ function SummaryPage() {
                 </Document>
               </div>
             </div>
-          </div>
+
+          </div>        
         </div>
       )}
+
+    <AuditModal 
+      isOpen={isAuditOpen} 
+      onClose={() => setIsAuditOpen(false)} 
+      userQuery={selectedFile?.name}
+      domainKey="admin_tech_domain" // 어제 연동한 2단계 프롬프트 가버넌스 도메인 키
+    />
 
     </div>
   );

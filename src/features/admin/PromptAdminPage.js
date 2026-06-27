@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const BACKEND_URL = "http://localhost:8080";
+const API_BASE_URL = process.env.REACT_APP_API_URL;
 
 export default function PromptAdminPage() {
     const [prompts, setPrompts] = useState([]);
@@ -11,7 +11,7 @@ export default function PromptAdminPage() {
     const fetchPrompts = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(`${BACKEND_URL}/api/admin/prompts`);
+            const response = await axios.get(`${API_BASE_URL}/api/admin/prompts`);
             setPrompts(response.data);
         } catch (error) {
             alert("❌ 데이터를 불러오지 못했습니다: " + error.message);
@@ -24,22 +24,25 @@ export default function PromptAdminPage() {
         fetchPrompts();
     }, []);
 
-    const handlePromptChange = (key, value) => {
+    const handlePromptChange = (key, type, value) => {
         setPrompts(prev => prev.map(p => 
-            p.prompt_key === key ? { ...p, prompt_text: value } : p
+            p.prompt_id === key ? { ...p, prompt_type : type , system_prompt_text: value } : p
         ));
     };
 
-    const handleSave = async (key, text) => {
+    const handleSave = async (key, type, text) => {
         if (!text.trim()) {
-            alert("⚠️ 공백은 저장할 수 없습니다.");
+            alert("공백은 저장할 수 없습니다.");
             return;
         }
         try {
             setSavingKey(key);
-            const response = await axios.post(`${BACKEND_URL}/api/admin/prompts/update`, {
-                prompt_key: key,
-                prompt_text: text
+
+            const response = await axios.post(`${API_BASE_URL}/api/admin/prompts/update`, {
+                prompt_id: key,
+                prompt_type: type,
+                system_prompt_text: text
+                
             });
             alert("✨ " + response.data.message);
         } catch (error) {
@@ -81,7 +84,7 @@ export default function PromptAdminPage() {
                 gap: '24px'
             }}>
                 {prompts.map((p) => (
-                    <div key={p.prompt_key} style={{ 
+                    <div key={p.prompt_id} style={{ 
                         borderRadius: '8px', 
                         border: '1px solid #f1f5f9', 
                         backgroundColor: '#f8fafc', /* 부드러운 회색 박스로 격리 */
@@ -92,15 +95,15 @@ export default function PromptAdminPage() {
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>                                
-                                <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>&nbsp;{p.description}[{p.prompt_key}]</span>
+                                <span style={{ fontSize: '14px', color: '#64748b', fontWeight: '500' }}>&nbsp;{p.description}[{p.prompt_type}]</span>
                             </div>
                             
                             {/* 확정 버튼: 금융권 표준 그린 액션 톤 적용 */}
                             <button
-                                onClick={() => handleSave(p.prompt_key, p.prompt_text)}
-                                disabled={savingKey === p.prompt_key}
+                                onClick={() => handleSave(p.prompt_id, p.prompt_type, p.system_prompt_text)}
+                                disabled={savingKey === p.prompt_id}
                                 style={{ 
-                                    backgroundColor: savingKey === p.prompt_key ? '#cbd5e1' : '#10b981', 
+                                    backgroundColor: savingKey === p.prompt_id ? '#cbd5e1' : '#10b981', 
                                     color: '#fff', 
                                     border: 'none', 
                                     borderRadius: '6px', 
@@ -111,14 +114,14 @@ export default function PromptAdminPage() {
                                     transition: 'all 0.2s'
                                 }}
                             >
-                                {savingKey === p.prompt_key ? 'DB저장 중...' : '프롬프트 저장'}
+                                {savingKey === p.prompt_id ? 'DB저장 중...' : '프롬프트 저장'}
                             </button>
                         </div>
                         
                         {/* 텍스트 에디터 창 입력 영역 스타일 고도화 */}
                         <textarea
-                            value={p.prompt_text}
-                            onChange={(e) => handlePromptChange(p.prompt_key, e.target.value)}
+                            value={p.system_prompt_text}
+                            onChange={(e) => handlePromptChange(p.prompt_id, p.prompt_type, e.target.value)}
                             rows={5}
                             style={{ 
                                 width: '100%', 

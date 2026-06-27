@@ -248,7 +248,7 @@ function SummaryPage() {
             style={{ backgroundColor: !selectedFile ? '#f4f6f8' : '#fff', color: !selectedFile ? '#a3b1cc' : '#4f566b', border: '1px solid #cfd7df', borderRadius: '6px', height: '100%', padding: '0 25px', fontWeight: '600', fontSize: '13.5px', cursor: isUploading ? 'not-allowed' : 'pointer', minWidth: '180px', margin: 0 }}
                         
           >
-            파이프라인 상태 확인
+            문서 적합성 확인
           </button>
 
           <button disabled={isUploading} onClick={handleReset} style={{ backgroundColor: '#fff', color: '#4f566b', border: '1px solid #cfd7df', borderRadius: '6px', height: '100%', padding: '0 20px', fontWeight: '500', fontSize: '13.5px', cursor: isUploading ? 'not-allowed' : 'pointer', margin: 0 }}>

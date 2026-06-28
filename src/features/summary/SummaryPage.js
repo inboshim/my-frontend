@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { ShieldCheck, Copy, RefreshCw } from 'lucide-react'; // 아이콘 체인 유지
 import AuditModal from '../rag/AuditModal'; // 위에서 만든 모달 임포트
+import '../../styles/SummaryPage.css'; // 실제 프로젝트 폴더 경로에 맞춰 선언 확인
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -172,10 +173,21 @@ function SummaryPage() {
               setSummaryBlocks((prev) => {
                 // 백엔드 파이썬 서버의 신호탄(START_PAGE_NUM:)을 감지하면 카드를 즉시 찢어서 각각 독립 생성
                 if (prev.length === 0 || data.result_chunk.includes("START_PAGE_NUM:")) {
-                  return [...prev, { id: Date.now() + Math.random(), text: data.result_chunk, pageSource: null }];
+                  return [...prev, { 
+                    id: Date.now() + Math.random(), 
+                    text: data.result_chunk
+                    , pageSource: null 
+                    , status_code: data.status_code || 'SUCCESS'     
+                  }];
                 }
                 return prev.map((block, idx) => 
-                  idx === prev.length - 1 ? { ...block, text: block.text + data.result_chunk } : block
+                  idx === prev.length - 1 
+                    ? { 
+                        ...block, 
+                        text: block.text + data.result_chunk,
+                        status_code: data.status_code || block.status_code || 'SUCCESS'
+                      } 
+                  : block
                 );
               });
             }
@@ -184,7 +196,14 @@ function SummaryPage() {
               const targetPageNum = parseInt(data.page_source, 10);
               setSummaryBlocks((prev) => 
                 prev.map((block, idx) => 
-                  idx === prev.length - 1 ? { ...block, pageSource: targetPageNum } : block
+                  idx === prev.length - 1 
+                    ? { 
+                        ...block, 
+                        pageSource: targetPageNum,
+                        status_code: data.status_code || block.status_code || 'SUCCESS'
+
+                      } 
+                  : block
                 )
               );
             }
@@ -202,6 +221,7 @@ function SummaryPage() {
       setIsUploading(false); 
     }
   };
+
   return (
     <div className="summary-container">
       
@@ -335,48 +355,56 @@ function SummaryPage() {
                 return null;
               }
 
-              // 투자 지식 수집용 중요 페이지 동적 판별 필터 가동
+              // 1. [최상단 배치] 백엔드 SSE 스트리밍이 던져준 상태 코드 최우선 확보
+              const currentStatus = block.status_code || 'SUCCESS';
+
+              // 2. 클래스 및 배지 폰트 색상 안전 매핑 테이블 빌드
+              const STATUS_CLASS_MAP = {
+                SUCCESS: 'card-status-success',
+                ANOMALY_LOW_SCORE: 'card-status-anomaly',
+                SKIP_TIMEOUT: 'card-status-timeout'
+              };
+
+              const STATUS_BADGE_MAP = {
+                SUCCESS: { bg: '#d93838', text: '🔴 필수 체크' },
+                ANOMALY_LOW_SCORE: { bg: '#e03131', text: '⚠️ 품질 과락 (재연산 대기)' },
+                SKIP_TIMEOUT: { bg: '#6c757d', text: '⚪ 지연 스킵' }
+              };
+
+              const cardClass = STATUS_CLASS_MAP[currentStatus] || 'card-status-success';
+              const badge = STATUS_BADGE_MAP[currentStatus] || STATUS_BADGE_MAP['SUCCESS'];
+
+              // 3. 투자 지식 수집용 중요 페이지 동적 판별 필터 가동
               const keyWords = ["투자", "전략", "상승", "성장", "배분", "수치", "마진", "수익", "BUY"];
               let importanceScore = 0;
-              keyWords.forEach(word => {
-                if (cleanBodyText.includes(word)) importanceScore += 1;
-              });
-              const isImportantPage = importanceScore >= 2;
+              
+              // 🚨 [핵심 교정] 오직 서버 상태가 정상('SUCCESS')일 때만 본문 단어 채점을 작동시킵니다.
+              if (currentStatus === 'SUCCESS') {
+                keyWords.forEach(word => {
+                  if (cleanBodyText.includes(word)) importanceScore += 1;
+                });
+              }
+
+              // 최종 필독(Important) 여부 확정: 서버가 성공했고 단어도 2개 이상일 때만 황금 마크 허용
+              const isImportantPage = currentStatus === 'SUCCESS' && importanceScore >= 2;
+
+              //console.log("currentStatus : ", currentStatus);
 
               return (
                 <div 
                   key={block.id} 
-                  style={{ 
-                    // 필독 카드는 황금색 톤온톤 배경과 2px 테두리, 입체감 그림자 부여
-                    backgroundColor: isImportantPage ? '#fffdf0' : '#ffffff', 
-                    border: isImportantPage ? '2px solid #e2b400' : '1px solid #e3e8ee', 
-                    borderRadius: '8px', 
-                    padding: '12px 20px 16px 20px', 
-                    boxShadow: isImportantPage ? '0 6px 12px rgba(226, 180, 0, 0.15)' : '0 2px 4px rgba(0,0,0,0.02)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between', 
-                    boxSizing: 'border-box',
-                    height: '100%' 
-                  }}
+                  className={`evaluation-summary-card ${cardClass} ${isImportantPage ? 'is-important' : ''}`}
                 >
                   {/* 상단 타이틀 배너 (좌측: 대제목 및 빨간 배지 / 우측 반대편: 짙은 하늘색 알약 버튼 1열 정렬) */}
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center', 
-                    borderBottom: isImportantPage ? '1px solid #f2e3a1' : '1px solid #eef2f7', 
-                    paddingBottom: '6px',
-                    marginBottom: '10px'
-                  }}>
+                  <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '6px', marginBottom: '10px', borderBottom: '1px solid #eef2f7' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '15px', fontWeight: '700', color: isImportantPage ? '#cc9900' : '#007bbf', letterSpacing: '-0.3px' }}>
+                      <span className="card-title" style={{ fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>
                         {finalHeaderTitle}
                       </span>
-                      {/* 중요 필독 알림 배지 부착 */}
-                      {isImportantPage && (
-                        <span style={{ backgroundColor: '#d93838', color: '#ffffff', fontSize: '11px', fontWeight: '800', padding: '2px 8px', borderRadius: '4px', boxShadow: '0 2px 4px rgba(217,56,56,0.2)' }}>
-                          🔴 필수 체크
+                      {/* 💡 서버 상태 코드 및 중요도에 따른 배지 스마트 노출 */}
+                      {(currentStatus !== 'SUCCESS' || isImportantPage) && (
+                        <span style={{ backgroundColor: badge.bg, color: '#ffffff', fontSize: '11px', fontWeight: '800', padding: '2px 8px', borderRadius: '4px' }}>
+                          {badge.text}
                         </span>
                       )}
                     </div>
@@ -390,14 +418,9 @@ function SummaryPage() {
                           setInputPage(targetPage.toString()); 
                           setIsOpenModal(true);      
                         }}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', 
-                          backgroundColor: isImportantPage ? '#1a2f36' : '#007bbf', // 필독 카드의 버튼은 딥네이비 마감
-                          color: '#ffffff', fontSize: '12px', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', border: 'none', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', cursor: 'pointer', transition: 'all 0.15s ease',
-                          whiteSpace: 'nowrap'
-                        }}
-                        onMouseOver={(e) => { e.target.style.backgroundColor = isImportantPage ? '#0f1d22' : '#005f94'; e.target.style.transform = 'translateY(-1px)'; }}
-                        onMouseOut={(e) => { e.target.style.backgroundColor = isImportantPage ? '#1a2f36' : '#007bbf'; e.target.style.transform = 'translateY(0)'; }}
+                        className="btn-source"
+                        style={{ display: 'inline-flex', alignItems: 'center', color: '#ffffff', fontSize: '12px', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', border: 'none', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                        
                       >
                         📖 원문 {pageDisplayNum}쪽 확인하기
                       </button>                          
@@ -408,16 +431,7 @@ function SummaryPage() {
                   </div>
 
                   {/* 3줄 리포트 본문 출력 영역 (글자 크기 16px 압축형 고수 및 필독 카드는 글씨를 더 또렷하게 강조) */}
-                  <div style={{ 
-                    fontSize: '16px', 
-                    lineHeight: '1.45', 
-                    color: '#111111', 
-                    fontWeight: isImportantPage ? '600' : '500', 
-                    whiteSpace: 'pre-wrap', 
-                    letterSpacing: '-0.4px',
-                    flexGrow: 1, 
-                    marginBottom: '10px'
-                  }}>
+                  <div style={{ fontSize: '16px', lineHeight: '1.45', color: '#111111', fontWeight: (isImportantPage && currentStatus === 'SUCCESS') ? '600' : '500', whiteSpace: 'pre-wrap', letterSpacing: '-0.4px', flexGrow: 1, marginBottom: '10px' }}>
                     {cleanBodyText || <span style={{ color: '#a3b1cc', fontStyle: 'italic', fontSize: '14px' }}>금융 데이터 독해 및 구조화 번역 중...</span>}
                   </div>
                 </div>

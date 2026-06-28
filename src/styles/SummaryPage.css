@@ -19,3 +19,90 @@ div[class*="-card"] {
   max-width: 100% !important;
   box-sizing: border-box;
 }
+
+/* ────────────────────────────────────────────────────────
+   🌟 [서버 상태 코드 기반 차별화 카드 레이아웃]
+   ──────────────────────────────────────────────────────── */
+
+/* 기본 공통 카드 베이스 (인라인 스타일의 중복 레이아웃을 일괄 통합) */
+.evaluation-summary-card {
+  border-radius: 8px;
+  padding: 12px 20px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+  height: 100%;
+  transition: all 0.2s ease-in-out;
+}
+
+/* 🟢 SUCCESS 상태 - 일반 카드 */
+.card-status-success {
+  background-color: #ffffff;
+  border: 1px solid #e3e8ee;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+/* 🟡 SUCCESS 상태 - 필독(Important) 카드 */
+.card-status-success.is-important {
+  background-color: #fffdf0;
+  border: 2px solid #e2b400;
+  box-shadow: 0 6px 12px rgba(226, 180, 0, 0.15);
+}
+
+/* ⚠️ ANOMALY_LOW_SCORE 상태 - 품질 과락 카드 */
+.card-status-anomaly {
+  background-color: #fff5f5;
+  border: 1px solid #ffa8a8;
+  box-shadow: none;
+}
+
+/* ⚪ SKIP_TIMEOUT 상태 - 지연 스킵 카드 */
+.card-status-timeout {
+  background-color: #f8f9fa;
+  border: 1px dashed #ced4da;
+  box-shadow: none;
+  opacity: 0.75; /* 가시성을 대폭 낮춰 스킵된 느낌 부여 */
+}
+
+/* ─── 헤더 타이틀 및 배지 폰트 색상 제어 ─── */
+.card-status-success .card-title { color: #007bbf; }
+.card-status-success.is-important .card-title { color: #cc9900; }
+.card-status-anomaly .card-title { color: #fa5252; }
+.card-status-timeout .card-title { color: #6c757d; }
+
+/* ─── 하단 원문 확인 버튼 색상 마감 ─── */
+.card-status-success .btn-source { background-color: #007bbf; }
+.card-status-success.is-important .btn-source { background-color: #1a2f36; }
+.card-status-anomaly .btn-source { background-color: #cc5de8; }
+.card-status-timeout .btn-source { background-color: #495057; }
+
+/* ─── 하단 원문 확인 버튼 기본 트랜지션 마감 ─── */
+.btn-source {
+  transition: all 0.15s ease-in-out !important;
+}
+
+/* 💡 [마우스 호버 마스터 키]: 마우스 올렸을 때 살짝 위로 뜨는 입체감 일괄 부여 */
+.btn-source:hover {
+  transform: translateY(-1px) !important;
+}
+
+/* 🟢 SUCCESS 상태 - 마우스 올렸을 때 버튼 색상 변화 */
+.card-status-success .btn-source:hover { 
+  background-color: #005f94 !important; 
+}
+
+/* 🟡 SUCCESS (필독) 상태 - 마우스 올렸을 때 버튼 색상 변화 */
+.card-status-success.is-important .btn-source:hover { 
+  background-color: #0f1d22 !important; 
+}
+
+/* ⚠️ ANOMALY_LOW_SCORE (과락) 상태 - 마우스 올렸을 때 버튼 색상 변화 */
+.card-status-anomaly .btn-source:hover { 
+  background-color: #b14dc9 !important; 
+}
+
+/* ⚪ SKIP_TIMEOUT (스킵) 상태 - 마우스 올렸을 때 버튼 색상 변화 */
+.card-status-timeout .btn-source:hover { 
+  background-color: #343a40 !important; 
+}

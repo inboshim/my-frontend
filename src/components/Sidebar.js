@@ -37,7 +37,7 @@ export default function Sidebar({ userRole = 'ADMIN' }) {
                         </p>
                         
                         <button
-                            onClick={() => navigate('/admin')}
+                            onClick={() => navigate('/admin/code-manager')}
                             className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-bold transition-all border ${
                                 isActive('/admin')
                                     ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/40 shadow-lg'

@@ -65,6 +65,31 @@
   transition: background-color 0.1s ease-in-out, color 0.1s ease-in-out !important;
 }
 
+/* 🛠️ [공통코드관리 전용] 제미나이 정원형 단추 고도화 확장 스펙 */
+.nav-link.code-manager {
+  position: relative !important;
+}
+
+/* 🟢 마우스 호버(Hover) 시: 공통코드 인프라의 정교함을 상징하는 기계적 그린/테크 톤 변환 */
+.nav-link.code-manager:hover {
+  background-color: #e6f4ea !important; /* 구글 표준 청정 테크 그린 백그라운드 */
+  color: #137333 !important;            /* 묵직한 금융 인프라 무결성 딥 그린 */
+}
+
+/* ⚙️ [애니메이션 치트키]: 마우스 올리면 내부 톱니바퀴 아이콘이 정교하게 회전하는 메커니즘 효과 */
+.nav-link.code-manager:hover svg,
+.nav-link.code-manager:hover i {
+  transform: rotate(45deg) !important;  /* 45도 회전하며 맞물려 들어가는 시스템 느낌 연출 */
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 🔵 활성화(Active) 상태: 현재 공통코드 관리 메뉴가 켜져 있을 때의 철통 보안 고정 링 */
+.nav-link.code-manager.active {
+  background-color: #ceead6 !important; /* 강력하게 연결된 마스터-디테일 활성 링 */
+  color: #137333 !important;
+  font-weight: bold !important;
+}
+
 /* 🌟 [제미나이 픽셀 오디팅 레이어]: 아이콘 선의 두께와 선명도를 하드웨어 드라이버 레벨에서 강제 팽창 */
 .sidebar svg, 
 .nav-link svg, 

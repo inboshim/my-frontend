@@ -5,8 +5,8 @@ const API_BASE_URL = process.env.REACT_APP_API_URL;
 
 export default function CommonGroupForm({ groupId, mode = 'CREATE', initialRowData, onSaveResult, onClose }) {
 
-    const groupIdRef = useRef(null);
-    const groupNameRef = useRef(null);    
+    const commonGroupIdRef = useRef(null);
+    const commonGroupNameRef = useRef(null);    
 
     // 🌟 [이동 완료] 입력 폼 데이터 상태를 자식 내부에서 직접 관리
     const [commonGroupCode, setCommonGroupCode] = useState(
@@ -35,7 +35,7 @@ export default function CommonGroupForm({ groupId, mode = 'CREATE', initialRowDa
       
       if (name === 'commonGroupName') {
         // 🌟 영문 및 한글, 공백문자만 허용 (숫자, 특수문자 즉시 제거)
-        const filteredValue = value.replace(/[^a-zA-Z가-힣ㄱ-ㅎㅏ-ㅣ\s]/g, '');
+        const filteredValue = value.replace(/[^a-zA-Z가-힣ㄱ-ㅎㅏ-ㅣ0-9\s]/g, '');
         // 🌟 character varying(100) 제한
         if (filteredValue.length <= 100) {
           setCommonGroupCode(prev => ({ ...prev, [name]: filteredValue }));
@@ -50,14 +50,14 @@ export default function CommonGroupForm({ groupId, mode = 'CREATE', initialRowDa
     // [체크 1-1] 그룹 ID 필수값 및 정규식 체크 (영문, _ 필수)
     if (!commonGroupCode.commonGroupId.trim()) {
       alert('그룹코드 아이디를 입력해 주세요.');
-      groupIdRef.current.focus(); // 🌟 Group ID 창으로 포커스 이동
+      commonGroupIdRef.current.focus(); // 🌟 Group ID 창으로 포커스 이동
       return;
     }
 
     // [체크 2-1] 그룹 명칭 필수값 및 정규식 체크 (영문, _ 필수)
     if (!commonGroupCode.commonGroupName.trim()) {
       alert('그룹코드 명칭을 입력해 주세요.');
-      groupNameRef.current.focus(); // 🌟 Group Name 창으로 포커스 이동
+      commonGroupNameRef.current.focus(); // 🌟 Group Name 창으로 포커스 이동
       return;
     }    
 
@@ -92,6 +92,41 @@ export default function CommonGroupForm({ groupId, mode = 'CREATE', initialRowDa
     
     };
     
+    // 삭제 버튼 핸들러 (우선 콘솔 출력 및 창 닫기)
+    const handleDeleteGroup = async () => {
+    console.log('서버로 보낼 삭제 데이터:', commonGroupCode);
+
+    // 2. [비동기 통신] FastAPI 백엔드로 데이터 전송
+    try {
+        // 💡 백엔드 라우터에 설정된 UPSERT 엔드포인트 주소로 POST 요청
+        const response = await axios.post(`${API_BASE_URL}/api/admin/code/code-group/delete`, commonGroupCode, {
+        headers: {
+            'Content-Type': 'application/json'
+        }
+        });
+
+        // 3. [성공 처리] 백엔드가 200 OK 또는 201 Created를 리턴했을 때
+        if (response.status === 200 || response.status === 201) {
+        alert('그룹 코드가 정상적으로 삭제 되었습니다.');
+        
+        // 💡 부모 페이지에게 저장 완료 신호 전송 (좌측 AG-Grid 목록 새로고침 유발)
+        onSaveResult(true); 
+        }
+        
+    } catch (error) {
+                
+        const errorDetail = error.response?.data?.detail;
+        const errorMsg = typeof errorDetail === 'object' 
+            ? JSON.stringify(errorDetail, null, 2) 
+            : errorDetail || '서버 통신 오류';
+
+        alert(`삭제에 실패했습니다.\n사유: ${errorMsg}`);
+        
+        onSaveResult(false);
+    }
+    
+    };
+
 
     return (
         <div className="modal-overlay">
@@ -106,7 +141,7 @@ export default function CommonGroupForm({ groupId, mode = 'CREATE', initialRowDa
                     type="text" 
                     name="commonGroupId"
                     value={commonGroupCode.commonGroupId} 
-                    ref={groupIdRef} 
+                    ref={commonGroupIdRef} 
                     onChange={handleInputChange}
                     placeholder="예: SYSTEM_TYPE"
                     disabled={mode === 'UPDATE'} 
@@ -119,7 +154,7 @@ export default function CommonGroupForm({ groupId, mode = 'CREATE', initialRowDa
                     type="text" 
                     name="commonGroupName" 
                     value={commonGroupCode.commonGroupName} 
-                    ref={groupNameRef} 
+                    ref={commonGroupNameRef} 
                     onChange={handleInputChange}
                     placeholder="예: 시스템 유형 코드"
                 />
@@ -142,10 +177,42 @@ export default function CommonGroupForm({ groupId, mode = 'CREATE', initialRowDa
                 </label>
                 </div>
 
-                <div className="modal-actions">
-                <button type="button" className="btn-cancel" onClick={onClose}>취소</button>
-                <button type="button" className="btn-save" onClick={handleSaveGroup}>저장</button>
-                </div>
+                {/* 사용 유무 체크박스 하단에 배치될 최종 버튼 영역 */}
+                <div className="modal-footer-container">                    
+
+                    {/* 2. [우측] 취소 및 저장 버튼 그룹 (수정 모드가 아닐 때도 레이아웃 우측 정렬 유지) */}
+                    <div className="modal-footer-right-group">
+                        <button type="button" className="btn-save" onClick={handleSaveGroup}>
+                            저장
+                        </button>
+
+                        {/* 1. [좌측] 수정 모드일 때만 나타나는 보수적인 개별 삭제 버튼 */}
+                        {mode === 'UPDATE' && (
+                            <button
+                                type="button"
+                                className="btn-delete-group"
+                                onClick={() => {
+                                    // 2중 안전장치 유효성 컨펌 가동
+                                    const confirmDelete = window.confirm(
+                                        `⚠️ [삭제 경고]\n그룹 ID: [${commonGroupCode.commonGroupId}]를 정말 삭제하시겠습니까?`
+                                    );
+                                    if (confirmDelete) {
+                                        
+                                        handleDeleteGroup();
+                                    }
+                                }}
+                            >
+                                그룹 삭제
+                            </button>
+                        )}  
+
+                        <button type="button" className="btn-cancel" onClick={onClose}>
+                            취소
+                        </button>
+                        
+                    </div>
+
+              </div>
             </div>
         </div>
 

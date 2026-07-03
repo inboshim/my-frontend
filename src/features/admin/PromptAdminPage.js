@@ -3,30 +3,30 @@ import axios from 'axios';
 
 // 🌟 [모듈 누락 해결]: AG-Grid 가 요구하는 페이징 및 텍스트 필터 모듈을 정확히 패키징합니다.
 import { AgGridReact } from 'ag-grid-react';
-import { 
-  ModuleRegistry, 
-  ClientSideRowModelModule, 
-  ValidationModule,
-  PaginationModule,  
-  TextFilterModule,
-  CellStyleModule,
-  RowSelectionModule, 
-  LocaleModule // 👈 수입은 정상 완료 상태 확인
-} from 'ag-grid-community';
+// import { 
+//   ModuleRegistry, 
+//   ClientSideRowModelModule, 
+//   ValidationModule,
+//   PaginationModule,  
+//   TextFilterModule,
+//   CellStyleModule,
+//   RowSelectionModule, 
+//   LocaleModule // 👈 수입은 정상 완료 상태 확인
+// } from 'ag-grid-community';
 
 //import 'ag-grid-community/styles/ag-grid.css';
 //import 'ag-grid-community/styles/ag-theme-alpine.css';
 
 // 🌟 [전역 레지스트리 가동]: 새로 추가된 모듈들을 배열에 몽땅 넣어 주입합니다.
-ModuleRegistry.registerModules([
-  ClientSideRowModelModule,   
-  ValidationModule,
-  PaginationModule,  
-  TextFilterModule,
-  CellStyleModule,
-  RowSelectionModule, 
-  LocaleModule // 👈 수입은 정상 완료 상태 확인
-]);
+// ModuleRegistry.registerModules([
+//   ClientSideRowModelModule,   
+//   ValidationModule,
+//   PaginationModule,  
+//   TextFilterModule,
+//   CellStyleModule,
+//   RowSelectionModule, 
+//   LocaleModule // 👈 수입은 정상 완료 상태 확인
+// ]);
 
 const API_BASE_URL = process.env.REACT_APP_API_URL;
 
@@ -39,21 +39,21 @@ export default function PromptAdminPage() {
   const [selectedPrompt, setSelectedPrompt] = useState({
     prompt_id: null,
     prompt_type: '',
-    item_name: '',
+    common_item_id : null,
+    common_item_order : null,
+    is_use : true,
     system_prompt_text: ''
   });
 
   // 🏛️ 1. AG-Grid 컬럼 명세 정의 (JOIN 데이터 매핑)
   const columnDefs = [
-    { headerName: "순번", valueGetter: "node.rowIndex + 1", width: 80, cellStyle: { textAlign: 'center' } },
-    { headerName: "에이전트 유형 (ID)", field: "prompt_type", sortable: true, filter: true, width: 220 },
-    { headerName: "관리 명칭 (공통코드)", field: "item_name", sortable: true, filter: true, width: 250,
-      cellStyle: { fontWeight: 'bold', color: '#2b6cb0' } 
+    { headerName: "순번", valueGetter: "node.rowIndex + 1", sortable: false, filter: false, width: 80, cellStyle: { textAlign: 'center' } },
+    { headerName: "에이전트 유형 (ID)", field: "promptType", sortable: false, filter: false, width: 180, cellStyle: { fontWeight: 'bold', color: '#2b6cb0' } },
+    { headerName: "실행 순서", field: "commonItemOrder", sortable: false, filter: false, width: 100, cellStyle: { textAlign: 'center' } },
+    { headerName: "시스템 지시문 본문 (미리보기)", field: "systemPromptText", sortable: false, filter: false, flex: 1, minWidth: 250,
+      cellRenderer: (params) => params.value ? params.value.substring(0, 90) + '...' : '지시문이 비어있습니다.'
     },
-    { headerName: "시스템 지시문 본문 (미리보기)", field: "system_prompt_text", flex: 1, minWidth: 300,
-      cellRenderer: (params) => params.value ? params.value.substring(0, 70) + '...' : '지시문이 비어있습니다.'
-    },
-    { headerName: "상태", field: "is_active", width: 100, 
+    { headerName: "상태", field: "isUse", width: 100, sortable: false, filter: false,
       cellRenderer: (params) => params.value ? '🟢 활성' : '🔴 중지', cellStyle: { textAlign: 'center' } 
     }
   ];
@@ -62,7 +62,15 @@ export default function PromptAdminPage() {
   const fetchPrompts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/api/admin/prompts`);
+
+      const response = await axios.get(`${API_BASE_URL}/api/admin/prompts`, {
+          params: {
+            promptId: null,
+            commonItemId : "",
+            systemPromptText : ""
+          }
+        });  
+      
       setPrompts(response.data);
     } catch (error) {
       alert("❌ 그리드 데이터를 불러오지 못했습니다: " + error.message);
@@ -92,8 +100,8 @@ export default function PromptAdminPage() {
     try {
       // 백엔드로 수정된 데이터 전송 (Upsert 또는 Update 엔드포인트 가정)
       await axios.post(`${API_BASE_URL}/api/admin/prompts/save`, {
-        prompt_type: selectedPrompt.prompt_type,
-        system_prompt_text: selectedPrompt.system_prompt_text
+        promptType: selectedPrompt.promptType,
+        systemPromptText: selectedPrompt.systemPromptText
       });
       
       alert("✨ 프롬프트 지시문이 안전하게 변경되었습니다.");
@@ -109,7 +117,7 @@ export default function PromptAdminPage() {
   return (
     <div style={{ padding: '25px', backgroundColor: '#f7fafc', minHeight: '100vh' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
-        <h3 style={{ margin: 0, color: '#2d3748', fontWeight: 'bold' }}>🏛️ AI 에이전트 프롬프트 마스터 관리자 패널</h3>
+        <h3 style={{ margin: 0, color: '#2d3748', fontWeight: 'bold' }}>프롬프트 관리자</h3>
         <span style={{ fontSize: '13px', color: '#718096' }}>💡 수정하려면 리스트 행을 <b>더블클릭</b> 하세요.</span>
       </div>
 
@@ -119,10 +127,17 @@ export default function PromptAdminPage() {
           rowData={prompts}
           columnDefs={columnDefs}
           onRowDoubleClicked={onRowDoubleClicked} // 더블클릭 이벤트 연결
+          rowSelection={{ 
+                  mode: 'singleRow',
+                  checkboxes: false,
+                  headerCheckbox: false
+                }}  /* 🌟 v32 최신 규격 경고 박멸 */ 
           pagination={true}
           paginationPageSize={10}
           paginationPageSizeSelector={[10, 20, 50, 100]} /* 🌟 노란색 불빛 완벽 방어 */
           defaultColDef={{ resizable: true, filter: true }}
+          ensureDomOrder={true}          // DOM 순서를 보장하여 드래그 선택을 정확하게 만듭니다.
+          enableCellTextSelection={true}  // ★ 셀 안의 텍스트를 마우스로 드래그 선택할 수 있게 합니다.         
         />
       </div>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect} from 'react';
 import axios from 'axios';
 import '../../styles/GroupGrid.css';
 
@@ -13,9 +13,10 @@ export default function CodeAdminPage() {
   const [groupRows, setGroupRows] = useState([]); // 좌측 마스터 그룹 데이터 스토어
   const [itemRows, setItemRows] = useState([]);   // 우측 디테일 아이템 데이터 스토어
   const [selectedGroupId, setSelectedGroupId] = useState(null); 
+  const [selectedItemId, setSelectedItemId] = useState(null); 
   const [loading, setLoading] = useState(false);
   const [groupGridApi, setGroupGridApi] = useState(null);
-
+  
   const [selectedGroupRowData, setSelectedGroupRowData] = useState(null); 
   const [selectedItemRowData, setSelectedItemRowData] = useState(null); 
 
@@ -71,7 +72,7 @@ export default function CodeAdminPage() {
 
   // 🏛️ 2. [우측 그리드 컬럼] 공통 아이템코드 명세 정의
   const itemColumnDefs = [
-    { headerName: "순번", valueGetter: "node.rowIndex + 1", width: 60, cellStyle: { textAlign: 'center' } },
+    { headerName: "순번", valueGetter: "node.rowIndex + 1", width: 80, cellStyle: { textAlign: 'center' } },
     { headerName: "아이템코드 ID", field: "commonItemId", sortable: true, filter: true, width: 170 },
     { headerName: "아이템코드 명칭", field: "commonItemName", sortable: true, filter: true, width: 210, cellStyle: { color: '#2b6cb0', fontWeight: 'bold' } },
     { headerName: "정렬 순서", field: "commonItemOrder", sortable: true, width: 90, cellStyle: { textAlign: 'center' } },
@@ -168,6 +169,30 @@ const onGroupRowDoubleClick = (event) => {
   setIsCommonGroupCodeModalOpen(true);   // 모달 오픈 스위치 ON
 };
 
+const onItemRowClick = async (event) => {
+
+    const commonItemId = event.data.commonItemId;
+    handleItemSelection(commonItemId);
+    
+    
+};
+
+// 2. AG-Grid Item 행 더블클릭 시 호출될 함수
+const onItemRowDoubleClick = (event) => {
+
+  if (clickTimer) {
+    clearTimeout(clickTimer);
+    clickTimer = null;
+  }
+
+  const rowData = event.data; // 💡 AG-Grid가 제공하는 더블클릭된 행의 실제 데이터 객체
+  //console.log("더블클릭된 행 데이터:", rowData);
+
+  setCommonItemCodeModalMode('UPDATE'); // 수정 모드로 세팅
+  setSelectedItemRowData(rowData);      // 선택된 행 데이터를 자식에게 줄 준비
+  setIsCommonItemCodeModalOpen(true);   // 모달 오픈 스위치 ON
+};
+
   useEffect(() => {
     fetchGroupCodes("", "");
   }, []);
@@ -179,7 +204,7 @@ const onGroupRowDoubleClick = (event) => {
     
   }; 
 
-  const onRowDataUpdated = (params) => {
+  const onRowDataGroupUpdated = (params) => {
     // 데이터가 아예 없는 경우 함수 종료 (에러 방지)
     if (!params.api || params.api.getDisplayedRowCount() === 0) return;
 
@@ -187,7 +212,8 @@ const onGroupRowDoubleClick = (event) => {
         // 루프 없이 ID로 바로 노드 찾기 (getRowId가 설정되어 있어야 합니다)
         const rowNode = params.api.getRowNode(selectedGroupId);
         if (rowNode) {
-            rowNode.setSelected(true);
+            rowNode.setSelected(true);            
+            setSelectedGroupId(rowNode.data.commonGroupId); 
             return; // 찾아서 선택했다면 종료
         }
     }
@@ -196,22 +222,48 @@ const onGroupRowDoubleClick = (event) => {
     const firstRowNode = params.api.getDisplayedRowAtIndex(0);
     if (firstRowNode) {
         firstRowNode.setSelected(true);
+        setSelectedGroupId(firstRowNode.data.commonGroupId);         
+
+        //첫번째 선택일 때 강제 onGroupRowClick 발생 시킴.
+        if (typeof onGroupRowClick === 'function') {
+            onGroupRowClick({ data: firstRowNode.data }); // 👈 오른쪽 아이템 로드 함수 작동!
+        }
     }
 };
 
+const onRowDataItemUpdated = (params) => {
+    // 데이터가 아예 없는 경우 함수 종료 (에러 방지)
+    if (!params.api || params.api.getDisplayedRowCount() === 0) return;
+
+    if (selectedItemId) {
+        // 루프 없이 ID로 바로 노드 찾기 (getRowId가 설정되어 있어야 합니다)
+        const rowNode = params.api.getRowNode(selectedItemId);
+        if (rowNode) {
+            rowNode.setSelected(true);            
+            setSelectedItemId(rowNode.data.commonItemId); 
+            return; // 찾아서 선택했다면 종료
+        }
+    }
+
+    // 만약 selectedGroupId가 없거나 그리드에서 못 찾았다면 첫 번째 행 기본 선택
+    const firstRowNode = params.api.getDisplayedRowAtIndex(0);
+    if (firstRowNode) {
+        firstRowNode.setSelected(true);
+        setSelectedItemId(firstRowNode.data.commonItemId);
+        
+    }
+};
   const handleGroupSelection = (commonGroupId) => {
     if (!commonGroupId) return;
     setSelectedGroupId(commonGroupId); // ID 상태 저장
     
   };
 
-  const onGridItemReady = (params) => {
-  // 그리드 API에 접근하여 첫 번째 행을 선택합니다.
-  const firstRowNode = params.api.getDisplayedRowAtIndex(0);
-    if (firstRowNode) {
-      firstRowNode.setSelected(true);
-    }
-  };
+  const handleItemSelection = (commonItemId) => {
+    if (!commonItemId) return;
+    setSelectedItemId(commonItemId); // ID 상태 저장
+    
+  };  
 
   if (loading) return <div style={{ padding: '20px', fontWeight: 'bold' }}>공통코드 뼈대 인프라 로드 중...</div>;
 
@@ -314,7 +366,7 @@ const onGroupRowDoubleClick = (event) => {
               onClose={() => setIsCommonGroupCodeModalOpen(false)}
               onSaveResult={(isSuccess) => {       
                 if (isSuccess) {
-                  // itemGridApi.refreshServerSide(); ➔ 성공 시 우측 그리드 새로고침 로직 기술
+                  
                   fetchGroupCodes(searchGroupId, searchGroupName);
                   setIsCommonGroupCodeModalOpen(false); 
                 }
@@ -332,15 +384,15 @@ const onGroupRowDoubleClick = (event) => {
                 onRowDoubleClicked={onGroupRowDoubleClick}                 
                 rowSelection={{ 
                   mode: 'singleRow',
-                  checkboxes: true,           // 체크박스 표시 기능 활성화
-                  enableClickSelection: true 
+                  checkboxes: false,
+                  headerCheckbox: false
                 }}  /* 🌟 v32 최신 규격 경고 박멸 */                
                 pagination={true}
                 paginationPageSize={10}
                 paginationPageSizeSelector={[10, 20, 50, 100]} /* 🌟 노란색 불빛 완벽 방어 */
                 defaultColDef={{ resizable: true }}                
-                onRowDataUpdated={onRowDataUpdated}   
-                onGridGroupReady={onGridGroupReady}
+                onRowDataUpdated={onRowDataGroupUpdated}   
+                onGridReady={onGridGroupReady}
                 ensureDomOrder={true}          // DOM 순서를 보장하여 드래그 선택을 정확하게 만듭니다.
                 enableCellTextSelection={true}  // ★ 셀 안의 텍스트를 마우스로 드래그 선택할 수 있게 합니다.         
             />
@@ -439,7 +491,7 @@ const onGroupRowDoubleClick = (event) => {
                 if (isSuccess) {
                   // itemGridApi.refreshServerSide(); ➔ 성공 시 우측 그리드 새로고침 로직 기술
                   
-
+                  fetchItemCodes(selectedGroupId, searchItemId, searchItemName);
                   setIsCommonItemCodeModalOpen(false); 
                 }
               }}
@@ -450,17 +502,21 @@ const onGroupRowDoubleClick = (event) => {
             <AgGridReact
                 rowData={itemRows}
                 columnDefs={itemColumnDefs}
+                onRowClicked={onItemRowClick}
+                onRowDoubleClicked={onItemRowDoubleClick}                 
                 rowSelection={{ 
                   mode: 'singleRow',
-                  checkboxes: true,           // 체크박스 표시 기능 활성화
-                  enableClickSelection: true 
+                  checkboxes: false,           // 체크박스 표시 기능 활성화
+                  enableClickSelection: false 
                 }}  /* 🌟 v32 최신 규격 경고 박멸 */
                 pagination={true}
                 paginationPageSize={10}
                 paginationPageSizeSelector={[10, 20, 50, 100]} /* 🌟 완벽 반영 확인 */
                 defaultColDef={{ resizable: true, filter: true }}
-                onGridReady={onGridItemReady} 
+                onRowDataUpdated={onRowDataItemUpdated}                
                 localeText={{ noRowsToShow: '좌측에서 관리할 그룹 코드를 먼저 마우스로 선택해 주세요.' }}
+                ensureDomOrder={true}          // DOM 순서를 보장하여 드래그 선택을 정확하게 만듭니다.
+                enableCellTextSelection={true}  // ★ 셀 안의 텍스트를 마우스로 드래그 선택할 수 있게 합니다.         
             />
           </div>
         </div>

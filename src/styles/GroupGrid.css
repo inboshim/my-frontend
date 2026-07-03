@@ -142,3 +142,38 @@
   cursor: not-allowed;
   border-color: #e2e8f0;
 }
+
+.modal-footer-container {
+  display: flex;
+  justify-content: space-between; 
+  align-items: center;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #edf2f7; /* 모달 내부 콘텐츠와 버튼 영역을 나누는 이쁜 구분선 */
+}
+
+/* 우측 취소/저장 버튼을 한 덩어리로 묶어주는 그룹 */
+.modal-footer-right-group {
+  display: flex;
+  gap: 8px;
+  margin-left: auto; /* 💡 만약 CREATE 모드여서 삭제 버튼이 사라져도, 취소/저장 버튼이 항상 우측 끝을 유지하게 만드는 보수적 마진 방어선 */
+}
+
+/* 보수적 경고 의미를 담은 아웃라인 형태의 그룹 삭제 버튼 */
+.btn-delete-group {
+  background-color: #ffffff;
+  color: #e53e3e; /* 가독성이 좋고 눈이 편안한 테일윈드 규격 Red (Red-600) */
+  border: 1px solid #e53e3e;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+/* 마우스 호버(Hover) 시 경고 강도를 높이는 색상 반전 애니메이션 효과 */
+.btn-delete-group:hover {
+  background-color: #e53e3e;
+  color: #ffffff;
+}

@@ -177,3 +177,238 @@
   background-color: #e53e3e;
   color: #ffffff;
 }
+
+/* 3. 콤보박스 (Select) 스타일 정의 */
+.modal-select-control {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e0;
+    background-color: #ffffff;
+    font-size: 14px;
+    color: #2d3748;
+    cursor: pointer;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.modal-select-control:focus {
+    border-color: #3182ce;
+}
+
+.modal-select-control:disabled {
+    background-color: #edf2f7 !important;
+    cursor: not-allowed;
+}
+
+/* 4. 프롬프트 본문 텍스트 영역 (Textarea) 스타일 정의 */
+.modal-textarea-control {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e0;
+    font-size: 14px;
+    font-family: 'monospace', Courier, monospace; /* 📌 템플릿 가독성을 위한 고정폭 글꼴 */
+    line-height: 1.5;
+    resize: vertical;
+    box-sizing: border-box;
+    outline: none;
+    white-space: pre-line;
+    transition: border-color 0.2s;
+}
+
+.modal-textarea-control:focus {
+    border-color: #3182ce;
+}
+
+/* 5. NIST 수치형 입력 칸 (Input Number) 나란히 정렬 및 스타일 정의 */
+.modal-metrics-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.modal-metrics-row .modal-form-group {
+    flex: 1;
+    margin-bottom: 0; /* 행 정렬을 위해 하단 여백 제거 */
+}
+
+.modal-number-input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e0;
+    font-size: 14px;
+    box-sizing: border-box;
+    outline: none;
+    color: #2d3748;
+    transition: border-color 0.2s;
+}
+
+.modal-number-input:focus {
+    border-color: #3182ce;
+}
+
+/* 와이드형 모달 CSS */
+/* 📌 가로 1000px 와이드 창 유지 */
+.modal-content-wide {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    padding: 30px;
+    max-width: 1000px;
+    width: 95%;
+    box-sizing: border-box;
+}
+
+.modal-content-wide h3 {
+    margin-top: 0;
+    margin-bottom: 25px;
+    color: #2d3748;
+    border-bottom: 2px solid #edf2f7;
+    padding-bottom: 15px;
+    font-size: 20px;
+}
+
+/* 메인 플렉스 컨테이너 */
+.modal-body-split-container {
+    display: flex;
+    gap: 30px; 
+    margin-bottom: 25px;
+}
+
+/* 📌 [시선 집중 좌측 판넬] 그룹ID, 아이템ID, 명칭, 정렬순서, 사용유무 (비중 45%) */
+.modal-left-meta-pane {
+    flex: 0.9;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background-color: #f7fafc; /* 시선이 먼저 닿는 곳에 단정한 서브 배경 부여 */
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+/* 📌 [시선 확장 우측 판넬] 대용량 프롬프트 가이드 & 유효성 검증 메시지 (비중 55%) */
+.modal-right-prompt-pane {
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* 공통 입력 폼 양식 */
+.wide-form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.wide-form-group label {
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 14px;
+    margin-bottom: 6px;
+}
+
+.wide-input-control {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e0;
+    font-size: 14px;
+    color: #2d3748;
+    box-sizing: border-box;
+    outline: none;
+    background-color: #ffffff;
+}
+
+.wide-input-control:focus {
+    border-color: #4c51bf;
+    box-shadow: 0 0 0 3px rgba(76, 81, 191, 0.15);
+}
+
+/* 시스템 지시문 전용 텍스트 필드 스타일 */
+.wide-textarea-control {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #cbd5e0;
+    font-size: 13px;
+    font-family: 'monospace', Courier, monospace; /* 가독성을 위한 고정폭 */
+    line-height: 1.5;
+    resize: vertical; 
+    min-height: 120px;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.wide-textarea-control:focus {
+    border-color: #4c51bf;
+}
+
+/* 하단 버튼 푸터 */
+.wide-footer-container {
+    border-top: 1px solid #edf2f7;
+    padding-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.guide-box-style {
+  background-color: #f8f9fa; 
+  border-left: 4px solid #ffc107; 
+  padding: 12px; 
+  margin-bottom: 20px; 
+  border-radius: 4px;
+}
+
+.guide-box {
+  background-color: #fcf8e3; /* 연한 노란 빛 파스텔톤 */
+  border-left: 5px solid #f0ad4e; /* 주황색 굵은 포인트 선 */
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.guide-title {
+  font-weight: bold;
+  color: #333333;
+  display: block;
+  margin-bottom: 8px;
+}
+
+textarea {
+  background-color: #fafafa; /* 흰색이 아닌 아주 밝은 회색 */
+  border: 1px solid #dcdcdc;
+  line-height: 1.6; /* 줄 간격을 넓혀 가독성 극대화 */
+  font-family: 'Malgun Gothic', sans-serif; /* 가독성 좋은 폰트 고정 */
+}
+
+/* 2. 실제 입력창: 줄간격과 가독성 개선 */
+.wide-textarea-control {
+  background-color: #fcfcfc; /* 입력창은 살짝 차분한 미색으로 배경 대비 유도 */
+  border: 1px solid #dcdcdc;
+  line-height: 1.6 !important; /* 글자 줄간격을 넓혀 빽빽함을 해소 */
+  padding: 12px;
+  font-size: 14px;
+  color: #222222;
+  border-radius: 4px;
+  width: 100%;
+}
+
+/* 입력창에 마우스를 클릭했을 때(포커스) 선명하게 하이라이트 */
+.wide-textarea-control:focus {
+  background-color: #ffffff; /* 입력 중일 때는 완전한 흰색으로 변경 */
+  border-color: #4a90e2; /* 세련된 파란색 테두리 */
+  outline: none;
+  box-shadow: 0 0 5px rgba(74, 144, 226, 0.3);
+}
+
+.helper-text{
+  font-size: 12px; 
+  color: #dc3545; 
+  margin-top: 4px; 
+  display: block;
+}

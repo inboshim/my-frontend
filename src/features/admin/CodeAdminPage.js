@@ -16,6 +16,7 @@ export default function CodeAdminPage() {
   const [selectedItemId, setSelectedItemId] = useState(null); 
   const [loading, setLoading] = useState(false);
   const [groupGridApi, setGroupGridApi] = useState(null);
+  const [itemGridApi, setItemGridApi] = useState(null);
   
   const [selectedGroupRowData, setSelectedGroupRowData] = useState(null); 
   const [selectedItemRowData, setSelectedItemRowData] = useState(null); 
@@ -33,7 +34,7 @@ export default function CodeAdminPage() {
   const [searchItemId, setSearchItemId] = useState('');
   const [searchItemName, setSearchItemName] = useState('');
 
-    // 2. 우측 그리드 상단 [아이템 추가] 버튼 클릭 시 호출할 함수
+  // 2. 우측 그리드 상단 [아이템 추가] 버튼 클릭 시 호출할 함수
   const handleOpenItemCreateModal = () => {
 
   // 기본적으로 State 값을 먼저 보되, 비어있다면 그리드 API에서 직접 꺼냅니다.
@@ -45,8 +46,6 @@ export default function CodeAdminPage() {
     if (selectedRows && selectedRows.length > 0) {
       // 데이터 구조에 따라 commonGroupId 또는 commonGroupId 중 맞는 키값을 입력하세요.
       currentGroupId = selectedRows[0].commonGroupId || selectedRows[0].commonGroupId; 
-      
-      console.log("그리드 API로 강제 가로챈 첫 행 ID:", currentGroupId);
     }
   }
 
@@ -82,9 +81,7 @@ export default function CodeAdminPage() {
   // 3. 백엔드에서 공통 그룹 마스터 목록 호출
   const fetchGroupCodes = async (searchId, searchName) => {
     try {
-      setLoading(true);      
-        console.log("그룹코드 :::", searchId);
-        console.log("그룹명칭 :::", searchName);
+      setLoading(true);              
         const response = await axios.get(`${API_BASE_URL}/api/admin/code/code-group/get_all`, {
           params: {
             commonGroupId : searchId,
@@ -103,16 +100,19 @@ export default function CodeAdminPage() {
 
   // 3. 백엔드에서 공통 그룹 마스터 목록 호출
   const fetchItemCodes = async (groupCodeId, searchId, searchName) => {
+
     try {
       setLoading(true);      
-      
-        const response = await axios.get(`${API_BASE_URL}/api/admin/code/code-item/get_all`, {
-          params: {
+
+      const response = await axios.get(`${API_BASE_URL}/api/admin/code/code-item/get_all`, {
+          params : {
             commonGroupId : groupCodeId,
             commonItemId : searchId,
-            commonItemName : searchName            
-          }
-        });      
+            commonItemName : searchName,
+            isUse : null,
+            commonItemIdYn : null,
+          }  
+    } );      
       
       setItemRows(response.data);      
 
@@ -162,8 +162,7 @@ const onGroupRowDoubleClick = (event) => {
   }
 
   const rowData = event.data; // 💡 AG-Grid가 제공하는 더블클릭된 행의 실제 데이터 객체
-  //console.log("더블클릭된 행 데이터:", rowData);
-
+  
   setCommonGroupCodeModalMode('UPDATE'); // 수정 모드로 세팅
   setSelectedGroupRowData(rowData);      // 선택된 행 데이터를 자식에게 줄 준비
   setIsCommonGroupCodeModalOpen(true);   // 모달 오픈 스위치 ON
@@ -171,9 +170,27 @@ const onGroupRowDoubleClick = (event) => {
 
 const onItemRowClick = async (event) => {
 
-    const commonItemId = event.data.commonItemId;
-    handleItemSelection(commonItemId);
-    
+    if (clickTimer) {
+      clearTimeout(clickTimer);
+    }
+
+    clickTimer = setTimeout(() => {
+
+      // 1. [추가] 마우스 드래그로 글자 블록이 지정된 상태인지 확인합니다.
+      const selectedText = window.getSelection().toString();
+      
+      // 2. [추가] 드래그된 글자가 있다면 조회를 취소하고 타이머만 초기화한 뒤 종료합니다.
+      if (selectedText && selectedText.trim().length > 0) {
+        clickTimer = null;
+        return; 
+      }
+
+      const commonItemId = event.data.commonItemId;      
+      handleItemSelection(commonItemId);    
+
+      clickTimer = null;
+
+    }, 250);    
     
 };
 
@@ -186,8 +203,7 @@ const onItemRowDoubleClick = (event) => {
   }
 
   const rowData = event.data; // 💡 AG-Grid가 제공하는 더블클릭된 행의 실제 데이터 객체
-  //console.log("더블클릭된 행 데이터:", rowData);
-
+  
   setCommonItemCodeModalMode('UPDATE'); // 수정 모드로 세팅
   setSelectedItemRowData(rowData);      // 선택된 행 데이터를 자식에게 줄 준비
   setIsCommonItemCodeModalOpen(true);   // 모달 오픈 스위치 ON
@@ -197,12 +213,30 @@ const onItemRowDoubleClick = (event) => {
     fetchGroupCodes("", "");
   }, []);
 
+  useEffect(() => {
+  // 아이템 그리드 API와 마우스로 선택된 ID 상태가 모두 준비되었을 때만 작동
+  if (itemGridApi && selectedItemId) {
+    const rowNode = itemGridApi.getRowNode(selectedItemId);
+    if (rowNode) {
+      rowNode.setSelected(true); // AG-Grid에게 해당 ID를 가진 행의 스타일을 켜라고 명령
+    }
+  }
+}, [selectedItemId, itemGridApi]);
+
   const onGridGroupReady = (params) => {
         
     // 1. 그리드 API 백엔드 컨트롤러 등록
     setGroupGridApi(params.api);
     
   }; 
+
+  const onGridItemReady = (params) => {
+        
+    // 1. 그리드 API 백엔드 컨트롤러 등록
+    setItemGridApi(params.api);
+    
+  }; 
+
 
   const onRowDataGroupUpdated = (params) => {
     // 데이터가 아예 없는 경우 함수 종료 (에러 방지)
@@ -233,12 +267,12 @@ const onItemRowDoubleClick = (event) => {
 
 const onRowDataItemUpdated = (params) => {
     // 데이터가 아예 없는 경우 함수 종료 (에러 방지)
-    if (!params.api || params.api.getDisplayedRowCount() === 0) return;
+    if (!params.api || params.api.getDisplayedRowCount() === 0) return;    
 
     if (selectedItemId) {
         // 루프 없이 ID로 바로 노드 찾기 (getRowId가 설정되어 있어야 합니다)
         const rowNode = params.api.getRowNode(selectedItemId);
-        if (rowNode) {
+        if (rowNode) {            
             rowNode.setSelected(true);            
             setSelectedItemId(rowNode.data.commonItemId); 
             return; // 찾아서 선택했다면 종료
@@ -500,20 +534,22 @@ const onRowDataItemUpdated = (params) => {
 
           <div className="ag-theme-quartz" style={{ height: '520px', width: '100%', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
             <AgGridReact
+                getRowId={(params) => params.data.commonItemId }
                 rowData={itemRows}
-                columnDefs={itemColumnDefs}
+                columnDefs={itemColumnDefs}                
                 onRowClicked={onItemRowClick}
                 onRowDoubleClicked={onItemRowDoubleClick}                 
                 rowSelection={{ 
                   mode: 'singleRow',
                   checkboxes: false,           // 체크박스 표시 기능 활성화
-                  enableClickSelection: false 
+                  enableClickSelection: false
                 }}  /* 🌟 v32 최신 규격 경고 박멸 */
                 pagination={true}
                 paginationPageSize={10}
                 paginationPageSizeSelector={[10, 20, 50, 100]} /* 🌟 완벽 반영 확인 */
                 defaultColDef={{ resizable: true, filter: true }}
                 onRowDataUpdated={onRowDataItemUpdated}                
+                onGridReady={onGridItemReady}
                 localeText={{ noRowsToShow: '좌측에서 관리할 그룹 코드를 먼저 마우스로 선택해 주세요.' }}
                 ensureDomOrder={true}          // DOM 순서를 보장하여 드래그 선택을 정확하게 만듭니다.
                 enableCellTextSelection={true}  // ★ 셀 안의 텍스트를 마우스로 드래그 선택할 수 있게 합니다.         

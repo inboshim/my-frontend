@@ -8,14 +8,16 @@ const API_BASE_URL = process.env.REACT_APP_API_URL;
 export default function CommonItemForm({ groupId, mode = 'CREATE', initialRowData, onSaveResult, onClose }) {
   
   const commonGroupIdRef = useRef(null);
-  const commonItemIdRef = useRef(null);    
+  const commonItemIdRef = useRef(null);
   const commonItemNameRef = useRef(null);
   const commonItemOrderRef = useRef(null);
+  const commonPromptAssistTextRef = useRef(null);
+  const commonPromptValidateTextRef = useRef(null);
 
   // 🌟 [이동 완료] 입력 폼 데이터 상태를 자식 내부에서 직접 관리
   const [commonItemCode, setCommonItemCode] = useState(
     mode === 'CREATE' 
-      ? { common_item_seq: null, commonGroupId: groupId, commonItemId: '', commonItemName: '', commonItemOrder: 0, isUse: true }
+      ? { common_item_seq: null, commonGroupId: groupId, commonItemId: '', commonItemName: '', commonItemOrder: 0, isUse: true, commonPromptAssistText:"", commonPromptValidateText:"" }
       : initialRowData // 수정 모드일 때는 부모가 넘겨준 행 데이터 적용
   );
   
@@ -51,6 +53,13 @@ export default function CommonItemForm({ groupId, mode = 'CREATE', initialRowDat
         setCommonItemCode(prev => ({ ...prev, [name]: filteredValue }));
       }
     }
+
+    if (name === 'commonPromptAssistText' || name === 'commonPromptValidateText') { 
+      
+      setCommonItemCode(prev => ({ ...prev, [name]: value }));
+      
+    }
+    
   };
 
   // 🌟 [이동 완료] 자체 저장 및 결과 리턴 로직
@@ -83,6 +92,20 @@ export default function CommonItemForm({ groupId, mode = 'CREATE', initialRowDat
       commonItemOrderRef.current.focus(); // 🌟 Group Name 창으로 포커스 이동
       return; 
     }   
+
+    // [체크 2-2] 시스템 프롬프트 도움 텍스트
+    if (!commonItemCode.commonPromptAssistText.trim()) {
+      alert('시스템 프롬프트 도움 문구 가이드 라인을 작성해 주세요.');
+      commonPromptAssistTextRef.current.focus(); // 🌟 Group Name 창으로 포커스 이동
+      return;
+    }    
+
+    // [체크 2-2] 시스템 프롬프트 유효성 텍스트
+    if (!commonItemCode.commonPromptValidateText.trim()) {
+      alert('시스템 프롬프트 도움 문구 가이드 라인을 작성해 주세요.');
+      commonPromptValidateTextRef.current.focus(); // 🌟 Group Name 창으로 포커스 이동
+      return;
+    }    
 
     console.log("서버 전송 데이타 ::: ", commonItemCode);
     
@@ -153,82 +176,132 @@ export default function CommonItemForm({ groupId, mode = 'CREATE', initialRowDat
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content">
+      <div className="modal-content-wide">
         <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#2d3748' }}>
           ⚙️ {mode === 'CREATE' ? '새 아이템 추가' : '아이템 수정'}
         </h3>
         
-        {/* 그룹 ID */}
-        <div className="modal-form-group">
-          <label>그룹 ID (Group ID)</label>
-          <input 
-            type="text" 
-            name="commonGroupId" 
-            ref={commonGroupIdRef} 
-            value={commonItemCode.commonGroupId} 
-            readOnly 
-          />
+        <div className="modal-body-split-container">
+          <div className="modal-left-meta-pane">
+            {/* 그룹 ID */}
+            <div className="modal-form-group">
+              <label>그룹 ID (Group ID)</label>
+              <input 
+                type="text" 
+                name="commonGroupId" 
+                ref={commonGroupIdRef} 
+                value={commonItemCode.commonGroupId} 
+                readOnly 
+              />
+            </div>
+
+            {/* 아이템 ID 입력 */}
+            <div className="modal-form-group">
+              <label>아이템 ID (영문, _ 만 가능)</label>
+              <input 
+                type="text" 
+                name="commonItemId" // 💡 name 속성을 commonItemId로 정확히 일치시킴
+                ref={commonItemIdRef} 
+                value={commonItemCode.commonItemId || ''} 
+                onChange={handleInputChange} // 💡 내부 필터링 핸들러 호출
+                placeholder="예: CHICKEN_01"
+                disabled={mode === 'UPDATE'} 
+              />
+            </div>
+
+            {/* 아이템 명칭 입력 */}
+            <div className="modal-form-group">
+              <label>아이템 명칭 (한글, 영문만 가능 / 최대 100자)</label>
+              <input 
+                type="text" 
+                name="commonItemName" 
+                ref={commonItemNameRef} 
+                value={commonItemCode.commonItemName || ''} 
+                onChange={handleInputChange}
+                placeholder="예: 후라이드 치킨"
+              />
+            </div>
+
+            {/* 정렬 순서 입력 */}
+            <div className="modal-form-group">
+              <label>정렬 순서 (숫자만 가능 / 최대 3자리)</label>
+              <input 
+                type="text" 
+                name="commonItemOrder"
+                ref={commonItemOrderRef}
+                value={commonItemCode.commonItemOrder}
+                onChange={handleInputChange}
+                placeholder="예: 10"
+              />
+            </div>
+
+            {/* 사용 유무 체크박스 */}
+            <div className="modal-form-group">
+              <label>사용 유무</label>
+              <label className={`checkbox-container ${mode === 'CREATE' ? 'disabled' : ''}`}>
+                <input 
+                  type="checkbox" 
+                  name="isUse" 
+                  checked={commonItemCode.isUse}
+                  onChange={handleInputChange}
+                  disabled={mode === 'CREATE'} 
+                />
+                <span style={{ fontSize: '14px', color: '#4a5568' }}>
+                  {commonItemCode.isUse ? '사용 (True)' : '미사용 (False)'}
+                </span>
+              </label>
+            </div>  
+            
+          </div>      
+
+          <div className="right-panel-container">
+            {/* 1. 시스템 프롬프트 작성 가이드 도움 문구 */}
+            <div className="guide-box-style guide-box">               
+              <span className="guide-title">ID 유형이 번역(translate)이면 영문 작성, 그 외 한글 작성 가능합니다.</span>
+            </div>
+            <div className="input-group-style">                
+                <textarea
+                    name="commonPromptAssistText"
+                    value={commonItemCode.commonPromptAssistText}
+                    ref={commonPromptAssistTextRef}
+                    onChange={handleInputChange}
+                    placeholder='예시) 이 프롬프트는 번역 에이전트의 페르소나를 정의합니다. 문체는 정중하게 유지해 주세요.'
+                    rows={6}
+                    className="wide-textarea-control"
+                />
+                <span className="helper-text">* 이 항목은 운영자가 해당 프롬프트를 수정할 때 가이드 팝업으로 노출됩니다.</span>
+            </div>
+
+            <div className="input-group-style" style={{ marginTop: '20px' }}>
+  
+              {/* 보완 포인트: 상단 가이드 박스와 대칭을 이루는 안내 블록 추가 */}
+              <div className="guide-box" style={{ borderColor: '#4a90e2', backgroundColor: '#f0f7ff' }}> 
+                <span className="guide-title" style={{ color: '#2b5a9e' }}>🔷 AI 프롬프트 유효성 검증 메시지 (LLM 전송용)</span>
+                <p className="guide-desc" style={{ color: '#4a6b9d', fontSize: '13px', margin: 0 }}>
+                  운영자가 등록한 시스템 프롬프트를 AI 검증관이 자동으로 유효성 검사할 때 사용하는 베이스 템플릿입니다.
+                </p>
+              </div>
+                <textarea
+                    name="commonPromptValidateText"
+                    value={commonItemCode.commonPromptValidateText}
+                    ref={commonPromptValidateTextRef}
+                    onChange={handleInputChange}
+                    placeholder='예시) 당신은 검증관입니다. 다음 프롬프트가 적절한지 판단하고 JSON 양식으로 출력하세요. 대상: {{target_prompt}}'                                
+                    rows={15}
+                    className="wide-textarea-control"
+                />
+                <span className="helper-text">{"* 필수 키워드: {{target_prompt}} 치환자를 반드시 포함하여 작성해 주세요."}</span>
+              </div>  
+            
+          </div>  
+
         </div>
 
-        {/* 아이템 ID 입력 */}
-        <div className="modal-form-group">
-          <label>아이템 ID (영문, _ 만 가능)</label>
-          <input 
-            type="text" 
-            name="commonItemId" // 💡 name 속성을 commonItemId로 정확히 일치시킴
-            ref={commonItemIdRef} 
-            value={commonItemCode.commonItemId || ''} 
-            onChange={handleInputChange} // 💡 내부 필터링 핸들러 호출
-            placeholder="예: CHICKEN_01"
-            disabled={mode === 'UPDATE'} 
-          />
-        </div>
 
-        {/* 아이템 명칭 입력 */}
-        <div className="modal-form-group">
-          <label>아이템 명칭 (한글, 영문만 가능 / 최대 100자)</label>
-          <input 
-            type="text" 
-            name="commonItemName" 
-            ref={commonItemNameRef} 
-            value={commonItemCode.commonItemName || ''} 
-            onChange={handleInputChange}
-            placeholder="예: 후라이드 치킨"
-          />
-        </div>
-
-        {/* 정렬 순서 입력 */}
-        <div className="modal-form-group">
-          <label>정렬 순서 (숫자만 가능 / 최대 3자리)</label>
-          <input 
-            type="text" 
-            name="commonItemOrder"
-            ref={commonItemOrderRef}
-            value={commonItemCode.commonItemOrder}
-            onChange={handleInputChange}
-            placeholder="예: 10"
-          />
-        </div>
-
-        {/* 사용 유무 체크박스 */}
-        <div className="modal-form-group">
-          <label>사용 유무</label>
-          <label className={`checkbox-container ${mode === 'CREATE' ? 'disabled' : ''}`}>
-            <input 
-              type="checkbox" 
-              name="isUse" 
-              checked={commonItemCode.isUse}
-              onChange={handleInputChange}
-              disabled={mode === 'CREATE'} 
-            />
-            <span style={{ fontSize: '14px', color: '#4a5568' }}>
-              {commonItemCode.isUse ? '사용 (True)' : '미사용 (False)'}
-            </span>
-          </label>
-        </div>
+        
 
         {/* 사용 유무 체크박스 하단에 배치될 최종 버튼 영역 */}
-      <div className="modal-footer-container">                    
+      <div className="wide-footer-container">                    
 
           {/* 2. [우측] 취소 및 저장 버튼 그룹 (수정 모드가 아닐 때도 레이아웃 우측 정렬 유지) */}
           <div className="modal-footer-right-group">

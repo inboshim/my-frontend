@@ -1,49 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import '../../styles/GroupGrid.css';
 
 // 🌟 [모듈 누락 해결]: AG-Grid 가 요구하는 페이징 및 텍스트 필터 모듈을 정확히 패키징합니다.
 import { AgGridReact } from 'ag-grid-react';
-// import { 
-//   ModuleRegistry, 
-//   ClientSideRowModelModule, 
-//   ValidationModule,
-//   PaginationModule,  
-//   TextFilterModule,
-//   CellStyleModule,
-//   RowSelectionModule, 
-//   LocaleModule // 👈 수입은 정상 완료 상태 확인
-// } from 'ag-grid-community';
-
-//import 'ag-grid-community/styles/ag-grid.css';
-//import 'ag-grid-community/styles/ag-theme-alpine.css';
-
-// 🌟 [전역 레지스트리 가동]: 새로 추가된 모듈들을 배열에 몽땅 넣어 주입합니다.
-// ModuleRegistry.registerModules([
-//   ClientSideRowModelModule,   
-//   ValidationModule,
-//   PaginationModule,  
-//   TextFilterModule,
-//   CellStyleModule,
-//   RowSelectionModule, 
-//   LocaleModule // 👈 수입은 정상 완료 상태 확인
-// ]);
+import CommonPromptForm from '../../components/common/CommonPromptForm';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL;
 
 export default function PromptAdminPage() {
   const [prompts, setPrompts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false); // 팝업 모달 상태 관리
-  
+    
+  const [groupGridApi, setPromptGridApi] = useState(null);
+    
+  const [selectedPromptRowData, setSelectedPromptRowData] = useState(null); 
+    
+    // 🌟 그룹코드 모달 오픈 여부 상태
+  const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
+  const [isPromptModalMode, setIsPromptModalMode] = useState('CREATE'); // 'CREATE' 또는 'UPDATE'  
+
   // 현재 팝업창에서 수정 중인 단일 데이터 스토어
-  const [selectedPrompt, setSelectedPrompt] = useState({
-    prompt_id: null,
-    prompt_type: '',
-    common_item_id : null,
-    common_item_order : null,
-    is_use : true,
-    system_prompt_text: ''
-  });
+  const [selectedPrompt, setSelectedPrompt] = useState(null);
+    
 
   // 🏛️ 1. AG-Grid 컬럼 명세 정의 (JOIN 데이터 매핑)
   const columnDefs = [
@@ -51,9 +30,9 @@ export default function PromptAdminPage() {
     { headerName: "에이전트 유형 (ID)", field: "promptType", sortable: false, filter: false, width: 180, cellStyle: { fontWeight: 'bold', color: '#2b6cb0' } },
     { headerName: "실행 순서", field: "commonItemOrder", sortable: false, filter: false, width: 100, cellStyle: { textAlign: 'center' } },
     { headerName: "시스템 지시문 본문 (미리보기)", field: "systemPromptText", sortable: false, filter: false, flex: 1, minWidth: 250,
-      cellRenderer: (params) => params.value ? params.value.substring(0, 90) + '...' : '지시문이 비어있습니다.'
+      cellRenderer: (params) => params.value ? params.value.substring(0, 130) + '...' : '지시문이 비어있습니다.'
     },
-    { headerName: "상태", field: "isUse", width: 100, sortable: false, filter: false,
+    { headerName: "상태", field: "isActive", width: 100, sortable: false, filter: false,
       cellRenderer: (params) => params.value ? '🟢 활성' : '🔴 중지', cellStyle: { textAlign: 'center' } 
     }
   ];
@@ -64,8 +43,9 @@ export default function PromptAdminPage() {
       setLoading(true);
 
       const response = await axios.get(`${API_BASE_URL}/api/admin/prompts`, {
-          params: {
+          params: {            
             promptId: null,
+            commonGroupId : "",
             commonItemId : "",
             systemPromptText : ""
           }
@@ -85,32 +65,23 @@ export default function PromptAdminPage() {
 
   // 🌟 2. [핵심 요건] 그리드 행 더블클릭 시 팝업창 출력 리스너
   const onRowDoubleClicked = (event) => {
-    const data = event.data;
-    setSelectedPrompt({
-      prompt_id: data.prompt_id,
-      prompt_type: data.prompt_type,
-      item_name: data.item_name || '미지정 에이전트',
-      system_prompt_text: data.system_prompt_text
-    });
-    setIsModalOpen(true); // 팝업 모달 오픈
-  };
 
-  // 💾 3. 팝업창 내부 [변경사항 반영] 저장 버튼 핸들러 (Axios 동기화)
-  const handleSave = async () => {
-    try {
-      // 백엔드로 수정된 데이터 전송 (Upsert 또는 Update 엔드포인트 가정)
-      await axios.post(`${API_BASE_URL}/api/admin/prompts/save`, {
-        promptType: selectedPrompt.promptType,
-        systemPromptText: selectedPrompt.systemPromptText
-      });
-      
-      alert("✨ 프롬프트 지시문이 안전하게 변경되었습니다.");
-      setIsModalOpen(false); // 팝업 닫기
-      fetchPrompts(); // 데이터 그리드 리프레시 새로고침
-    } catch (error) {
-      alert("❌ 저장 실패 (Oops 규칙 위반 확인 필요): " + error.message);
-    }
-  };
+    const rowData = event.data;
+
+    console.log("로우 데이타 ::: ", rowData);
+
+    setIsPromptModalMode('UPDATE'); // 수정 모드로 세팅
+    setSelectedPromptRowData(rowData);      // 선택된 행 데이터를 자식에게 줄 준비
+    setIsPromptModalOpen(true); // 팝업 모달 오픈
+  };  
+  
+  // 2. 우측 그리드 상단 [아이템 추가] 버튼 클릭 시 호출할 함수
+  const handleOpenPromptCreateModal = () => {
+
+    // 🌟 부모는 오직 모드 세팅과 모달 레이어 스위치만 ON 합니다. (나머지 세팅은 자식이 함)
+    setIsPromptModalMode('CREATE');
+    setIsPromptModalOpen(true);  
+};
 
   if (loading) return <div style={{ padding: '20px', fontWeight: 'bold' }}>데이터 그리드 빌드 중...</div>;
 
@@ -118,7 +89,17 @@ export default function PromptAdminPage() {
     <div style={{ padding: '25px', backgroundColor: '#f7fafc', minHeight: '100vh' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
         <h3 style={{ margin: 0, color: '#2d3748', fontWeight: 'bold' }}>프롬프트 관리자</h3>
-        <span style={{ fontSize: '13px', color: '#718096' }}>💡 수정하려면 리스트 행을 <b>더블클릭</b> 하세요.</span>
+        
+        {/* <span style={{ fontSize: '13px', color: '#718096' }}>💡 수정하려면 리스트 행을 <b>더블클릭</b> 하세요.</span> */}
+        {/* ➕ 신규 아이템 코드 추가 버튼 */}
+              <button 
+                type="button" 
+                className="btn-add-group" // 버튼 스타일 통일을 위해 클래스명 바인딩
+                onClick={handleOpenPromptCreateModal} // 오리지널 핸들러 함수 유기적 연결
+                style={{ padding: '6px 16px', backgroundColor: '#3182ce', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap' }}
+              >
+                + 프롬프트 추가
+              </button>
       </div>
 
       {/* ■ 마스터 데이터 영역: AG-Grid 테마 결합 */}
@@ -144,62 +125,20 @@ export default function PromptAdminPage() {
       {/* ========================================================================= */}
       {/* 🌟 디테일 팝업 영역: 더블클릭 시 렌더링되는 모달 창 */}
       {/* ========================================================================= */}
-      {isModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.4)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: '#fff', padding: '25px', borderRadius: '10px', width: '680px', boxShadow: '0 20px 25px rgba(0,0,0,0.15)' }}>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-              <h4 style={{ margin: 0, color: '#2b6cb0' }}>🛠️ 에이전트 시스템 프롬프트 상세 수정</h4>
-              <span style={{ fontSize: '12px', backgroundColor: '#ebf8ff', color: '#2b6cb0', padding: '3px 8px', borderRadius: '4px', fontWeight: 'bold' }}>
-                {selectedPrompt.item_name}
-              </span>
-            </div>
-            <hr style={{ border: '0.5px solid #edf2f7', marginBottom: '20px' }} />
-
-            {/* 고유 식별자 키 라벨링 */}
-            <div style={{ marginBottom: '15px' }}>
-              <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '6px', fontSize: '13px', color: '#4a5568' }}>
-                코드 ID (prompt_type)
-              </label>
-              <input 
-                value={selectedPrompt.prompt_type}
-                disabled={true} // 데이터 연동 무결성을 위해 고유 식별자 수정 잠금방어
-                style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e0', borderRadius: '5px', backgroundColor: '#edf2f7', color: '#718096', fontWeight: 'monospace' }}
-              />
-            </div>
-
-            {/* 프롬프트 입력용 거대 텍스트 영역 */}
-            <div style={{ marginBottom: '25px' }}>
-              <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '6px', fontSize: '13px', color: '#4a5568' }}>
-                시스템 지시문 설정 (System Prompt)
-              </label>
-              <textarea 
-                value={selectedPrompt.system_prompt_text}
-                onChange={(e) => setSelectedPrompt({...selectedPrompt, system_prompt_text: e.target.value})}
-                rows={10}
-                style={{ width: '100%', padding: '12px', border: '1px solid #cbd5e0', borderRadius: '5px', fontFamily: 'monospace', fontSize: '14px', lineHeight: '1.5', outline: 'none' }}
-                placeholder="Qwen 통제용 가드레일 단어(Strict, Never)를 포함하여 작성하세요..."
-              />
-            </div>
-
-            {/* 하단 제어 컨트롤러 */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-              <button 
-                onClick={() => setIsModalOpen(false)}
-                style={{ padding: '9px 16px', backgroundColor: '#edf2f7', color: '#4a5568', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
-              >
-                닫기
-              </button>
-              <button 
-                onClick={handleSave}
-                style={{ padding: '9px 20px', backgroundColor: '#319795', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }} // 수동 저장용 그린톤 매칭
-              >
-                변경사항 반영
-              </button>
-            </div>
-
-          </div>
-        </div>
+      {isPromptModalOpen && (
+        <CommonPromptForm               
+          mode={isPromptModalMode}    
+          initialRowData={selectedPromptRowData}
+          onClose={() => setIsPromptModalOpen(false)}
+          onSaveResult={(isSuccess) => {       
+            if (isSuccess) {
+              
+              fetchPrompts("", "");
+              setIsPromptModalOpen(false); 
+            }
+          }}
+        />
+        
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect} from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { ShieldCheck, Copy, RefreshCw } from 'lucide-react'; // 아이콘 체인 유지
 import AuditModal from '../rag/AuditModal'; // 위에서 만든 모달 임포트
@@ -8,6 +8,9 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url,
 ).toString();
+
+// 1. 컴포넌트 상단에 전역 취소 컨트롤러 변수 선언 (또는 useRef 사용)
+let summaryAbortController = null;
 
 function SummaryPage() {
   const [status, setStatus] = useState('');
@@ -38,6 +41,58 @@ function SummaryPage() {
     setNumPages(numPages);
   };
 
+  // 📄 src/features/summary/SummaryPage.js 내부의 이탈 방지 useEffect 최종 마감본
+
+  useEffect(() => {
+    // 1. [외부 가드] 브라우저 새로고침(F5), 창 닫기 차단용
+    const handleBeforeUnload = (e) => {
+      if (isUploading) {
+        e.preventDefault();
+        e.returnValue = "현재 금융 AI 분석이 진행 중입니다. 정말 이동하시겠습니까?";
+        return e.returnValue;
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // 🚨 [내부 라우터 가드] 리액트 내부 메뉴 클릭(SPA 이동) 시 앞길을 가로막는 무결성 락(Lock)
+    const handleAnchorClick = (e) => {
+      // 사용자가 한창 AI 요약 분석 중일 때만 작동
+      if (isUploading) {
+        // 💡 클릭된 대상이 라우터 링크(a 태그나 사이드바 메뉴 버튼)인지 확인
+        const target = e.target.closest("a, button, [role='button']");
+        if (target) {
+          // 1단계: 브라우저가 다음 페이지로 라우팅하려는 디폴트 동작을 즉시 강제로 "압수(중단)" 합니다.
+          e.preventDefault();
+          e.stopPropagation();
+
+          // 2단계: 사용자에게 의사를 직접 물어봅니다.
+          const userConfirmed = window.confirm(
+            "🚨 현재 대용량 금융 보고서 AI 분석이 진행 중입니다!\n\n지금 페이지를 이동하시면 진행 상황이 완전히 유실되고 서버 연산이 중단됩니다. 정말 이탈하시겠습니까?"
+          );
+
+          if (userConfirmed) {
+            // 사용자가 [확인/이동]을 누른 경우에만 비로소 백엔드를 멈추고 실제 이동을 수동 진행합니다.
+            console.log("🪓 [이탈 승인] 백엔드 자원을 회수하고 페이지를 이동합니다.");
+            handleReset();
+            
+            // 가로막았던 락을 풀고, 클릭했던 원래 주소로 강제 리다이렉트 유도
+            const targetHref = target.getAttribute("href") || target.dataset.path;
+            if (targetHref) window.location.href = targetHref;
+          }
+        }
+      }
+    };
+
+    // 💡 대시보드 전체 문서 영역에 라우팅 가로채기 이벤트 리스너 등록
+    document.addEventListener("click", handleAnchorClick, true);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("click", handleAnchorClick, true);
+    };
+  }, [isUploading]); // 실시간 업로드/분석 상태 완벽 동기화 추적
+
+
   const handleFileChange = (e) => {
     if (selectedFile || isUploading) return;
     const file = e.target.files[0]; // 단일 파일 객체 정확한 인덱스 고정 패치
@@ -58,6 +113,14 @@ function SummaryPage() {
   };
 
   const handleReset = () => {
+    
+    console.log(summaryAbortController);
+    // 💡 기존에 돌고 있던 컨트롤러가 있다면 안전하게 먼저 취소
+    if (summaryAbortController && typeof summaryAbortController.abort === 'function') {
+        summaryAbortController.abort();
+        summaryAbortController = null;
+    }
+    
     setSelectedFile(null);
     setFileName('');
     setIsUploading(false);
@@ -72,6 +135,7 @@ function SummaryPage() {
     setIsOpenModal(false);
     setModalPos({ x: 0, y: 0 });
     setIsAuditOpen(false);
+    
     
     const fileInput = document.getElementById('summary-file-input');
     if (fileInput) fileInput.value = '';
@@ -116,10 +180,20 @@ function SummaryPage() {
 
     setIsAuditOpen(true);
 
-  };
+  };  
 
-  const handleStartSummary = async () => {
+  const handleStartSummary = async () => {    
+
     if (!selectedFile) return;
+
+    // 💡 기존에 돌고 있던 컨트롤러가 있다면 안전하게 먼저 취소
+    if (summaryAbortController && typeof summaryAbortController.abort === 'function') {
+        summaryAbortController.abort();
+    }
+
+    // 💡 새로운 취소 신호기 생성
+    summaryAbortController = new AbortController();
+    const signal = summaryAbortController.signal;
 
     setIsUploading(true);
     setSummaryResult(''); 
@@ -134,6 +208,7 @@ function SummaryPage() {
       const response = await fetch(`${API_BASE_URL}/api/summary/pdf`, {
         method: 'POST',
         body: formData, 
+        signal:signal
       });
 
       if (!response.ok) {
@@ -215,8 +290,12 @@ function SummaryPage() {
       }
 
     } catch (error) {
-      console.error('요약 연동 중 에러:', error);
-      setSummaryResult(`[에러 발생] 요약 처리에 실패했습니다.\n사유: ${error.message}`);
+      if (error.name === 'AbortError') {
+        console.log("🎯 사용자가 페이지를 이탈하여 브라우저가 AI 분석 요청을 강제 중단했습니다.");
+      }else{
+        console.error('요약 연동 중 에러:', error);
+        setSummaryResult(`[에러 발생] 요약 처리에 실패했습니다.\n사유: ${error.message}`);
+      }      
     } finally {
       setIsUploading(false); 
     }
@@ -231,7 +310,7 @@ function SummaryPage() {
           실시간 AI 요약 대시보드
         </h2>
         <span style={{ backgroundColor: '#eef2f7', color: '#5469d4', padding: '5px 12px', borderRadius: '30px', fontSize: '11.5px', fontWeight: '600' }}>
-          Active Model: Qwen2.5-1.5B (CUDA-Citation)
+          Active Model: qwen2.5:3b-instruct
         </span>
       </div>
 
@@ -271,7 +350,7 @@ function SummaryPage() {
             문서 적합성 확인
           </button>
 
-          <button disabled={isUploading} onClick={handleReset} style={{ backgroundColor: '#fff', color: '#4f566b', border: '1px solid #cfd7df', borderRadius: '6px', height: '100%', padding: '0 20px', fontWeight: '500', fontSize: '13.5px', cursor: isUploading ? 'not-allowed' : 'pointer', margin: 0 }}>
+          <button onClick={handleReset} style={{ backgroundColor: '#fff', color: '#4f566b', border: '1px solid #cfd7df', borderRadius: '6px', height: '100%', padding: '0 20px', fontWeight: '500', fontSize: '13.5px', cursor: 'pointer', margin: 0 }}>
             초기화
           </button>
         </div>
@@ -292,7 +371,7 @@ function SummaryPage() {
       {/* 하단 리포트 결과창 구역 */}
       <div style={{ backgroundColor: '#fff', border: '1px solid #e3e8ee', borderRadius: '8px', padding: '20px 25px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)', minHeight: 'calc(100vh - 160px)', boxSizing: 'border-box' }}>
         <h3 style={{ margin: '0 0 12px 0', fontSize: '14.5px', fontWeight: '500', color: '#1a1f36', borderBottom: '1px solid #eef2f7', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span></span> [중요 키워드] : "투자", "전략", "상승", "성장", "배분", "수치", "마진", "수익", "BUY" 를 기준으로 실기간 AI 분석합니다.
+          <span></span> [중요 키워드] : "투자", "전략", "상승", "성장", "배분", "수치", "마진", "수익", "BUY" 를 기준으로 실시간 AI 분석합니다.
         </h3>
         
         {summaryResult && (
@@ -374,19 +453,10 @@ function SummaryPage() {
               const cardClass = STATUS_CLASS_MAP[currentStatus] || 'card-status-success';
               const badge = STATUS_BADGE_MAP[currentStatus] || STATUS_BADGE_MAP['SUCCESS'];
 
-              // 3. 투자 지식 수집용 중요 페이지 동적 판별 필터 가동
-              const keyWords = ["투자", "전략", "상승", "성장", "배분", "수치", "마진", "수익", "BUY"];
-              let importanceScore = 0;
-              
-              // 🚨 [핵심 교정] 오직 서버 상태가 정상('SUCCESS')일 때만 본문 단어 채점을 작동시킵니다.
-              if (currentStatus === 'SUCCESS') {
-                keyWords.forEach(word => {
-                  if (cleanBodyText.includes(word)) importanceScore += 1;
-                });
-              }
-
               // 최종 필독(Important) 여부 확정: 서버가 성공했고 단어도 2개 이상일 때만 황금 마크 허용
-              const isImportantPage = currentStatus === 'SUCCESS' && importanceScore >= 2;
+              // 📄 SummaryPage.js -> 388번 라인을 태그 유무 검사로 최적화 전환
+              const isImportantPage = currentStatus === 'SUCCESS';
+
 
               //console.log("currentStatus : ", currentStatus);
 

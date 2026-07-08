@@ -4,10 +4,8 @@ import { ShieldCheck, Copy, RefreshCw } from 'lucide-react'; // 아이콘 체인
 import AuditModal from '../rag/AuditModal'; // 위에서 만든 모달 임포트
 import '../../styles/SummaryPage.css'; // 실제 프로젝트 폴더 경로에 맞춰 선언 확인
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url,
-).toString();
+//PDF worker js 파일.
+pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs`;
 
 // 1. 컴포넌트 상단에 전역 취소 컨트롤러 변수 선언 (또는 useRef 사용)
 let summaryAbortController = null;
@@ -61,6 +59,12 @@ function SummaryPage() {
         // 💡 클릭된 대상이 라우터 링크(a 태그나 사이드바 메뉴 버튼)인지 확인
         const target = e.target.closest("a, button, [role='button']");
         if (target) {
+
+          // 🔥 [추가] 클릭한 버튼에 data-bypass="true" 속성이 있으면 이탈 경고를 무시하고 정상 실행합니다.
+          if (target.getAttribute('data-bypass') === 'true') {
+              return; 
+          }
+
           // 1단계: 브라우저가 다음 페이지로 라우팅하려는 디폴트 동작을 즉시 강제로 "압수(중단)" 합니다.
           e.preventDefault();
           e.stopPropagation();
@@ -172,8 +176,10 @@ function SummaryPage() {
     setIsDragging(false);
   };
 
-  const handleStartAudit = () => {
+  const handleStartAudit = (e) => {
     
+    if (e && e.preventDefault) e.preventDefault();
+
     console.log("파일선택유무 : 파일업로드 유무", selectedFile + " : "+ isUploading);    
 
     if (!selectedFile || isUploading) return;
@@ -205,6 +211,7 @@ function SummaryPage() {
 
     try {
       const API_BASE_URL = process.env.REACT_APP_API_URL;
+      //const API_BASE_URL = 'http://my-report-app.local';
       const response = await fetch(`${API_BASE_URL}/api/summary/pdf`, {
         method: 'POST',
         body: formData, 
@@ -337,6 +344,7 @@ function SummaryPage() {
           <button 
             disabled={!selectedFile} 
             onClick={() => { setPageNumber(1); setInputPage('1'); setIsOpenModal(true); }}
+            data-bypass="true"
             style={{ backgroundColor: !selectedFile ? '#f4f6f8' : '#fff', color: !selectedFile ? '#a3b1cc' : '#4f566b', border: '1px solid #cfd7df', borderRadius: '6px', height: '100%', padding: '0 18px', fontWeight: '500', fontSize: '13.5px', cursor: !selectedFile ? 'not-allowed' : 'pointer', margin: 0 }}
           >
             원본 문서 보기
@@ -483,11 +491,13 @@ function SummaryPage() {
 
                       <button
                         onClick={() => {
+
                           const targetPage = parseInt(pageDisplayNum, 10);
                           setPageNumber(targetPage); 
                           setInputPage(targetPage.toString()); 
                           setIsOpenModal(true);      
                         }}
+                        data-bypass="true"
                         className="btn-source"
                         style={{ display: 'inline-flex', alignItems: 'center', color: '#ffffff', fontSize: '12px', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', border: 'none', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', cursor: 'pointer', whiteSpace: 'nowrap' }}
                         
@@ -536,13 +546,14 @@ function SummaryPage() {
               <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#1a1f36', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '600px' }}>
                 🖐️ 여기를 클릭하고 드래그하여 이동: <span style={{ color: '#007bbf', fontWeight: '700' }}>{fileName}</span>
               </h3>
-              <button onClick={() => { setIsOpenModal(false); setModalPos({x:0, y:0}); }} style={{ border: 'none', backgroundColor: 'transparent', fontSize: '18px', cursor: 'pointer', color: '#697386' }}>✕</button>
+              <button data-bypass="true" onClick={() => { setIsOpenModal(false); setModalPos({x:0, y:0}); }} style={{ border: 'none', backgroundColor: 'transparent', fontSize: '18px', cursor: 'pointer', color: '#697386' }}>✕</button>
             </div>
 
             <div style={{ marginBottom: '15px', display: 'flex', gap: '20px', alignItems: 'center', backgroundColor: '#f8f9fa', padding: '8px 20px', borderRadius: '30px', border: '1px solid #e3e8ee', userSelect: 'none' }}>
               <div style={{ display: 'flex', gap: '6px', alignItems: 'center', fontSize: '13px' }}>
-                <button disabled={pageNumber <= 1} onClick={() => { const p = pageNumber - 1; setPageNumber(p); setInputPage(p.toString()); }} style={{ padding: '3px 10px', cursor: 'pointer', fontWeight: '600', borderRadius: '4px', border: '1px solid #cfd7df', backgroundColor: '#fff' }}>이전</button>
+                <button data-bypass="true" disabled={pageNumber <= 1} onClick={() => { const p = pageNumber - 1; setPageNumber(p); setInputPage(p.toString()); }} style={{ padding: '3px 10px', cursor: 'pointer', fontWeight: '600', borderRadius: '4px', border: '1px solid #cfd7df', backgroundColor: '#fff' }}>이전</button>
                 <input 
+                  data-bypass="true"
                   type="text" 
                   value={inputPage}
                   onChange={(e) => setInputPage(e.target.value)}
@@ -550,20 +561,21 @@ function SummaryPage() {
                   style={{ width: '40px', textAlign: 'center', padding: '3px', fontWeight: '700', border: '1px solid #cfd7df', borderRadius: '4px', color: '#1a1f36' }}
                 />
                 <span style={{ fontWeight: '600', color: '#4f566b' }}>/ {numPages || 1} P</span>
-                <button onClick={() => handlePageJump(inputPage)} style={{ padding: '3px 8px', cursor: 'pointer', fontSize: '12px', borderRadius: '4px', border: 'none', backgroundColor: '#007bbf', color: '#fff', fontWeight: '600', marginLeft: '2px' }}>이동</button>
-                <button disabled={pageNumber >= (numPages || 1)} onClick={() => { const p = pageNumber + 1; setPageNumber(p); setInputPage(p.toString()); }} style={{ padding: '3px 10px', cursor: 'pointer', fontWeight: '600', borderRadius: '4px', border: '1px solid #cfd7df', backgroundColor: '#fff' }}>다음</button>
+                <button data-bypass="true" onClick={() => handlePageJump(inputPage)} style={{ padding: '3px 8px', cursor: 'pointer', fontSize: '12px', borderRadius: '4px', border: 'none', backgroundColor: '#007bbf', color: '#fff', fontWeight: '600', marginLeft: '2px' }}>이동</button>
+                <button data-bypass="true" disabled={pageNumber >= (numPages || 1)} onClick={() => { const p = pageNumber + 1; setPageNumber(p); setInputPage(p.toString()); }} style={{ padding: '3px 10px', cursor: 'pointer', fontWeight: '600', borderRadius: '4px', border: '1px solid #cfd7df', backgroundColor: '#fff' }}>다음</button>
               </div>
               <div style={{ width: '1px', height: '16px', backgroundColor: '#cfd7df' }}></div>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '13px' }}>
-                <button onClick={() => setScale(prev => Math.max(0.6, prev - 0.1))} style={{ padding: '3px 10px', cursor: 'pointer', fontWeight: '700', borderRadius: '4px', border: '1px solid #cfd7df', backgroundColor: '#fff' }}>－</button>
+                <button data-bypass="true" onClick={() => setScale(prev => Math.max(0.6, prev - 0.1))} style={{ padding: '3px 10px', cursor: 'pointer', fontWeight: '700', borderRadius: '4px', border: '1px solid #cfd7df', backgroundColor: '#fff' }}>－</button>
                 <span style={{ fontWeight: '700', minWidth: '60px', textAlign: 'center', color: '#007bbf' }}>{Math.round(scale * 100)}%</span>
-                <button onClick={() => setScale(prev => Math.min(2.0, prev + 0.1))} style={{ padding: '3px 10px', cursor: 'pointer', fontWeight: '700', borderRadius: '4px', border: '1px solid #cfd7df', backgroundColor: '#fff' }}>＋</button>
+                <button data-bypass="true" onClick={() => setScale(prev => Math.min(2.0, prev + 0.1))} style={{ padding: '3px 10px', cursor: 'pointer', fontWeight: '700', borderRadius: '4px', border: '1px solid #cfd7df', backgroundColor: '#fff' }}>＋</button>
               </div>
             </div>
 
             <div style={{ flex: 1, width: '100%', overflowY: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', backgroundColor: '#f4f6f8', padding: '15px', borderRadius: '6px', boxSizing: 'border-box' }}>
               <div style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.06)', backgroundColor: '#fff' }}>
-                <Document file={selectedFile} onLoadSuccess={onDocumentLoadSuccess}>
+                <Document file={selectedFile ? URL.createObjectURL(selectedFile) : null} onLoadSuccess={onDocumentLoadSuccess}
+                loading={<div className="p-4 text-sm text-blue-600 font-medium">PDF 원문 엔진 가동 중...</div>}>
                   <Page pageNumber={pageNumber} width={650} scale={scale} renderTextLayer={false} renderAnnotationLayer={false} />
                 </Document>
               </div>

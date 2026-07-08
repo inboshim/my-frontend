@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, CheckCircle, AlertTriangle, Loader2, FileText, Languages, Layers } from 'lucide-react';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL;
+
 export default function AuditModal({ isOpen, onClose, userQuery, domainKey = "default" }) {
   const [status, setStatus] = useState(100);
   const [score, setScore] = useState(0);
@@ -20,7 +22,7 @@ export default function AuditModal({ isOpen, onClose, userQuery, domainKey = "de
     setError('');
 
     const encodedQuery = encodeURIComponent(userQuery);
-    const sseUrl = `http://localhost:8080/api/v1/rag/stream?user_query=${encodedQuery}&domain_key=${domainKey}`;
+    const sseUrl = `${API_BASE_URL}/api/v1/rag/stream?user_query=${encodedQuery}&domain_key=${domainKey}`;
     const eventSource = new EventSource(sseUrl);
 
     eventSource.addEventListener('pipeline_update', (e) => {

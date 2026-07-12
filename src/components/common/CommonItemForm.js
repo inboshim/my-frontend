@@ -11,8 +11,10 @@ export default function CommonItemForm({ groupId, mode = 'CREATE', initialRowDat
   const commonItemIdRef = useRef(null);
   const commonItemNameRef = useRef(null);
   const commonItemOrderRef = useRef(null);
-  const commonPromptAssistTextRef = useRef(null);
+  const commonPromptAssistTextRef = useRef(null);  
   const commonPromptValidateTextRef = useRef(null);
+
+  const [activeTab, setActiveTab] = useState("GUIDE");  
 
   // 🌟 [이동 완료] 입력 폼 데이터 상태를 자식 내부에서 직접 관리
   const [commonItemCode, setCommonItemCode] = useState(
@@ -177,12 +179,13 @@ export default function CommonItemForm({ groupId, mode = 'CREATE', initialRowDat
   return (
     <div className="modal-overlay">
       <div className="modal-content-wide">
-        <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#2d3748' }}>
+        <h3 style={{ marginTop: 0, marginBottom: '10px', color: '#2d3748' }}>
           ⚙️ {mode === 'CREATE' ? '새 아이템 추가' : '아이템 수정'}
         </h3>
         
-        <div className="modal-body-split-container">
-          <div className="modal-left-meta-pane">
+        {/* 좌우 2분할 메인 레이아웃 컨테이너 */}
+        <div className="modal-body-split-container" style={{ display: 'flex', flexDirection: 'row', gap: '10px', alignItems: 'flex-start', width: '100%' }}>
+          <div className="modal-left-meta-pane" style={{ width: '30%', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* 그룹 ID */}
             <div className="modal-form-group">
               <label>그룹 ID (Group ID)</label>
@@ -252,46 +255,81 @@ export default function CommonItemForm({ groupId, mode = 'CREATE', initialRowDat
               </label>
             </div>  
             
-          </div>      
+          </div>          
 
-          <div className="right-panel-container">
-            {/* 1. 시스템 프롬프트 작성 가이드 도움 문구 */}
-            <div className="guide-box-style guide-box">               
-              <span className="guide-title">ID 유형이 번역(translate)이면 영문 작성, 그 외 한글 작성 가능합니다.</span>
-            </div>
-            <div className="input-group-style">                
-                <textarea
-                    name="commonPromptAssistText"
-                    value={commonItemCode.commonPromptAssistText}
-                    ref={commonPromptAssistTextRef}
-                    onChange={handleInputChange}
-                    placeholder='예시) 이 프롬프트는 번역 에이전트의 페르소나를 정의합니다. 문체는 정중하게 유지해 주세요.'
-                    rows={6}
-                    className="wide-textarea-control"
-                />
-                <span className="helper-text">* 이 항목은 운영자가 해당 프롬프트를 수정할 때 가이드 팝업으로 노출됩니다.</span>
-            </div>
-
-            <div className="input-group-style" style={{ marginTop: '20px' }}>
-  
-              {/* 보완 포인트: 상단 가이드 박스와 대칭을 이루는 안내 블록 추가 */}
-              <div className="guide-box" style={{ borderColor: '#4a90e2', backgroundColor: '#f0f7ff' }}> 
-                <span className="guide-title" style={{ color: '#2b5a9e' }}>🔷 AI 프롬프트 유효성 검증 메시지 (LLM 전송용)</span>
-                <p className="guide-desc" style={{ color: '#4a6b9d', fontSize: '13px', margin: 0 }}>
-                  운영자가 등록한 시스템 프롬프트를 AI 검증관이 자동으로 유효성 검사할 때 사용하는 베이스 템플릿입니다.
-                </p>
+          <div className="right-panel-container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            
+            {/* ⚙️ div 기반 탭 메뉴 세팅 */}
+            <div className="modal-tab-header" style={{ display: 'flex', borderBottom: '2px solid #e2e8f0', marginBottom: '16px', gap: '8px' }}>
+              <div 
+                onClick={() => setActiveTab('GUIDE')} 
+                style={{ padding: '10px 16px', fontSize: '14px', fontWeight: 'bold', borderBottom: activeTab === 'GUIDE' ? '3px solid #dd6b20' : '3px solid transparent', color: activeTab === 'GUIDE' ? '#dd6b20' : '#718096', cursor: 'pointer', userSelect: 'none' }}
+              >
+                💡 시스템 프롬프트 작성 가이드라인
               </div>
-                <textarea
-                    name="commonPromptValidateText"
-                    value={commonItemCode.commonPromptValidateText}
-                    ref={commonPromptValidateTextRef}
-                    onChange={handleInputChange}
-                    placeholder='예시) 당신은 검증관입니다. 다음 프롬프트가 적절한지 판단하고 JSON 양식으로 출력하세요. 대상: {{target_prompt}}'                                
-                    rows={15}
-                    className="wide-textarea-control"
-                />
-                <span className="helper-text">{"* 필수 키워드: {{target_prompt}} 치환자를 반드시 포함하여 작성해 주세요."}</span>
-              </div>  
+              <div 
+                onClick={() => setActiveTab('VALIDATE')} 
+                style={{ padding: '10px 16px', fontSize: '14px', fontWeight: 'bold', borderBottom: activeTab === 'VALIDATE' ? '3px solid #4a90e2' : '3px solid transparent', color: activeTab === 'VALIDATE' ? '#4a90e2' : '#718096', cursor: 'pointer', userSelect: 'none' }}
+              >
+                🔷 시스템 프롬프트 유효성 검증 메시지
+              </div>
+            </div>
+
+            {/* 탭 바디 콘텐츠 영역 */}
+            <div className="modal-tab-body-content">
+              
+              {/* [1번 탭: GUIDE] 활성화 시 작동 */}
+              {activeTab === 'GUIDE' && (
+                
+                <div className="input-group-style" style={{ display: 'flex', flexDirection: 'column' }}>                
+                {/* 1. 시스템 프롬프트 작성 가이드 도움 문구 */}
+                <div className="guide-box-style guide-box">               
+                  <span className="guide-title">ID 유형이 번역(translate)이면 영문 작성, 그 외 한글 작성 가능합니다.</span>
+                </div>                    
+                  <textarea
+                      name="commonPromptAssistText"
+                      value={commonItemCode.commonPromptAssistText}
+                      ref={commonPromptAssistTextRef}
+                      onChange={handleInputChange}
+                      placeholder='예시) 이 프롬프트는 번역 에이전트의 페르소나를 정의합니다. 문체는 정중하게 유지해 주세요.'
+                      rows={20}
+                      className="wide-textarea-control"
+                      style={{                         
+                        resize: 'none',         /* 크기 조절 손잡이 비활성화 */
+                        backgroundColor: '#fffaf0', 
+                        lineHeight: '1.5' 
+                      }}
+                  />
+                  <span className="helper-text">* 이 항목은 운영자가 해당 프롬프트를 수정할 때 가이드 팝업으로 노출됩니다.</span>
+                  
+                </div>
+              )}
+
+              {/* [2번 탭: VALIDATE] 활성화 시 작동 */}
+              {activeTab === 'VALIDATE' && (
+                <div className="input-group-style" style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div className="validation-box-style validation-box">                     
+                      <span className="guide-title">시스템 프롬프트를 AI 검증관이 자동으로 유효성 검사 시 사용 템플릿.</span>                    
+                  </div>
+                    <textarea
+                      name="commonPromptValidateText"
+                      value={commonItemCode.commonPromptValidateText}
+                      ref={commonPromptValidateTextRef}
+                      onChange={handleInputChange}
+                      placeholder='예시) 당신은 검증관입니다. 다음 프롬프트가 적절한지 판단하고 JSON 양식으로 출력하세요. 대상: {{target_prompt}}'                                
+                      rows={20}
+                      className="wide-textarea-control"
+                      style={{                         
+                        resize: 'none',         /* 크기 조절 손잡이 비활성화 */
+                        backgroundColor: '#ebf8ff', 
+                        lineHeight: '1.5' 
+                      }}
+                  />
+                  <span className="helper-text">{"* 필수 키워드: {{target_prompt}} 치환자를 반드시 포함하여 작성해 주세요."}</span>                    
+                    
+                </div>  
+              )}
+            </div>           
             
           </div>  
 

@@ -257,7 +257,7 @@
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     padding: 30px;
-    max-width: 1000px;
+    max-width: 1100px;
     width: 95%;
     box-sizing: border-box;
 }
@@ -279,8 +279,7 @@
 }
 
 /* 📌 [시선 집중 좌측 판넬] 그룹ID, 아이템ID, 명칭, 정렬순서, 사용유무 (비중 45%) */
-.modal-left-meta-pane {
-    flex: 0.9;
+.modal-left-meta-pane {    
     display: flex;
     flex-direction: column;
     gap: 15px;
@@ -291,8 +290,7 @@
 }
 
 /* 📌 [시선 확장 우측 판넬] 대용량 프롬프트 가이드 & 유효성 검증 메시지 (비중 55%) */
-.modal-right-prompt-pane {
-    flex: 1.2;
+.modal-right-prompt-pane {    
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -367,6 +365,22 @@
 .guide-box {
   background-color: #fcf8e3; /* 연한 노란 빛 파스텔톤 */
   border-left: 5px solid #f0ad4e; /* 주황색 굵은 포인트 선 */
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.validation-box-style {
+  background-color: #f0f4f8; /* 차분하고 안정적인 연한 블루 그레이 */
+  border-left: 4px solid #3182ce; /* 스마트한 파란색 포인트 선 */
+  padding: 12px; 
+  margin-bottom: 20px; 
+  border-radius: 4px;
+}
+
+.validation-box {
+  background-color: #ebf8ff; /* 연한 파란 빛 파스텔톤 (노란색 상자와 완벽 대칭) */
+  border-left: 5px solid #4a90e2; /* 신뢰감을 주는 선명한 블루 포인트 선 */
   padding: 15px;
   border-radius: 4px;
   margin-bottom: 20px;

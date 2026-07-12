@@ -34,7 +34,7 @@ function SummaryPage() {
   // 모달 제어를 위한 실시간 트리거 상태 선언
   const [isAuditOpen, setIsAuditOpen] = useState(false);
   const [currentQuery, setCurrentQuery] = useState("최신 AI 트렌드 및 벡터 DB 성능 검증"); // 실제 입력된 질의어 바인딩
-
+  
   const onDocumentLoadSuccess = ({ numPages }) => {
     setNumPages(numPages);
   };
@@ -187,10 +187,11 @@ function SummaryPage() {
     setIsAuditOpen(true);
 
   };  
-
+  
   const handleStartSummary = async () => {    
 
     if (!selectedFile) return;
+    if (isUploading) return;
 
     // 💡 기존에 돌고 있던 컨트롤러가 있다면 안전하게 먼저 취소
     if (summaryAbortController && typeof summaryAbortController.abort === 'function') {
@@ -199,6 +200,7 @@ function SummaryPage() {
 
     // 💡 새로운 취소 신호기 생성
     summaryAbortController = new AbortController();
+    const timeoutId = setTimeout(() => summaryAbortController.abort(), 1800000); // 30분 후 타임아웃 차단
     const signal = summaryAbortController.signal;
 
     setIsUploading(true);
@@ -217,6 +219,8 @@ function SummaryPage() {
         body: formData, 
         signal:signal
       });
+
+      clearTimeout(timeoutId); 
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -307,6 +311,7 @@ function SummaryPage() {
       setIsUploading(false); 
     }
   };
+  
 
   return (
     <div className="summary-container">
@@ -381,7 +386,7 @@ function SummaryPage() {
         <h3 style={{ margin: '0 0 12px 0', fontSize: '14.5px', fontWeight: '500', color: '#1a1f36', borderBottom: '1px solid #eef2f7', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span></span> [중요 키워드] : "투자", "전략", "상승", "성장", "배분", "수치", "마진", "수익", "BUY" 를 기준으로 실시간 AI 분석합니다.
         </h3>
-        
+
         {summaryResult && (
           <span style={{ color: '#d93939', fontWeight: '500', display: 'block', backgroundColor: '#fdf2f2', padding: '12px', borderRadius: '6px', borderLeft: '4px solid #d93939', fontSize: '14.5px', marginBottom: '15px' }}>{summaryResult}</span>
         )}
@@ -546,7 +551,33 @@ function SummaryPage() {
               <h3 style={{ margin: 0, fontSize: '15px', fontWeight: '600', color: '#1a1f36', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '600px' }}>
                 🖐️ 여기를 클릭하고 드래그하여 이동: <span style={{ color: '#007bbf', fontWeight: '700' }}>{fileName}</span>
               </h3>
-              <button data-bypass="true" onClick={() => { setIsOpenModal(false); setModalPos({x:0, y:0}); }} style={{ border: 'none', backgroundColor: 'transparent', fontSize: '18px', cursor: 'pointer', color: '#697386' }}>✕</button>
+              <div 
+                data-bypass="true" 
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => { 
+                  e.preventDefault();
+                  e.stopPropagation(); // 💡 다른 마우스 이동/드래그 이벤트가 클릭 신호를 가로채지 못하게 철저히 차단
+                  setIsOpenModal(false); 
+                  setModalPos({x:0, y:0}); 
+                }} 
+                style={{
+                    display: 'flex',                    
+                    alignItems: 'center',       
+                    justifyContent: 'center',    
+                    width: '44px',
+                    height: '44px',
+                    
+                    backgroundColor: 'rgba(0,0,0,0.03)',
+                    border: '1px solid #ccc',
+                    borderRadius: '4px',
+                    
+                    cursor: 'pointer',                    
+                    position: 'relative',
+                    zIndex: 9999
+                }}
+              >
+                ✕
+              </div>
             </div>
 
             <div style={{ marginBottom: '15px', display: 'flex', gap: '20px', alignItems: 'center', backgroundColor: '#f8f9fa', padding: '8px 20px', borderRadius: '30px', border: '1px solid #e3e8ee', userSelect: 'none' }}>

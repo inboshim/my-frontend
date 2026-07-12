@@ -15,6 +15,8 @@ export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowD
     const [isPromptValidated, setIsPromptValidated] = useState(false);
     const [isValidating, setIsValidating] = useState(false); 
 
+    const [activeTab, setActiveTab] = useState("GUIDE");  
+
     // 🌟 [이동 완료] 입력 폼 데이터 상태를 자식 내부에서 직접 관리
     const [promptManager, setPromptManager] = useState(
     mode === 'CREATE' 
@@ -54,12 +56,7 @@ export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowD
 
     // 3. 실시간 입력 값 제한 핸들러 (DB 사이즈 및 정규식 완벽 방어)
     const handleInputChange = (e) => {
-      const { name, value, type, checked } = e.target;
-    
-      console.log("promptManager ::: ", promptManager);
-      console.log("이름 ::: ", name);
-      console.log("값 ::: ", value);
-      console.log("타입 ::: ", type);
+      const { name, value, type, checked } = e.target;      
 
     setPromptManager(prev => ({
         ...prev,
@@ -191,8 +188,33 @@ export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowD
         alert("시스템 프롬프트 텍스트 정보가 유효성을 통과하였습니다.\n저장 버튼을 실행하세요.");
 
     } catch (error) {
-        console.error("AI 검증 중 오류 발생:", error);
-        alert("AI 유효성 검사 도중 에러가 발생했습니다. 백엔드 로그를 확인해 주세요.");
+        // ⚠️ 백엔드에서 400 Bad Request 등으로 에러 응답을 보냈을 때 처리
+        if (error.response && error.response.data) {
+        const errorData = error.response.data;
+        let failureReason = "";
+
+        // 1. 백엔드가 fastapi의 HTTPException(detail=...) 구조로 보낸 경우
+        if (errorData.detail) {
+            failureReason = typeof errorData.detail === 'object' 
+            ? (errorData.detail.reason || JSON.stringify(errorData.detail)) 
+            : errorData.detail;
+        } 
+        // 2. 만약 백엔드가 400 에러 상태에서도 일반 JSON 객체 {"is_valid": false, "reason": "..."}를 그대로 보낸 경우
+        else if (errorData.reason) {
+            failureReason = errorData.reason;
+        }
+
+        // 🚨 유효성 검증 실패 사유를 얼럿창에 표시하고 유효성 검증 상태를 false로 지정
+        setIsPromptValidated(false);
+        alert(`[유효성 검증 실패]\n\n사유: ${failureReason || "프롬프트 규격이 올바르지 않습니다."}`);
+        
+        } else {
+            // 서버 네트워크 단절이나 알 수 없는 전역 에러 케이스
+            setIsPromptValidated(false);
+            console.error("통신 에러 상세 ::: ", error);
+            alert("서버와 통신 중 알 수 없는 에러가 발생했습니다.");
+        }
+        
     } finally{
         setIsValidating(false);
     }
@@ -289,7 +311,7 @@ export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowD
         <div className="modal-overlay">
             <div className="modal-content" style={{ 
                 maxWidth: '1050px !important', 
-                width: '1050px', 
+                width: '1200px', 
                 padding: '10px', 
                 boxSizing: 'border-box',
                 display: 'block' /* 내부 요소를 수직으로 쌓지 않고 독립 배치가 가능하게 차단 */
@@ -301,7 +323,7 @@ export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowD
                 <div style={{ 
                     display: 'flex', 
                     flexDirection: 'row',
-                    gap: '32px', 
+                    gap: '10px', 
                     width: '100%', 
                     alignItems: 'flex-start',
                     justifyContent: 'space-between'
@@ -309,7 +331,7 @@ export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowD
         
                     
                     {/* ================== [왼쪽 바구니]: 입력 폼 필드들 (너비 고정하여 밀림 방지) ================== */}
-                    <div style={{ width: '560px', minWidth: '560px', flexShrink: 0 }}>
+                    <div style={{ width: '650px', minWidth: '560px', flexShrink: 0 }}>
           
 
                         <div className="modal-form-group" style={{ marginBottom: '20px' }}>
@@ -463,40 +485,56 @@ export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowD
 
                 </div>                
 
-                <div style={{ flex: '1', minWidth: '350px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ flex: '1', minWidth: '350px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           
-                    {/* 1. 선택된 아이템의 전체 정보 오브젝트를 배열에서 실시간 검색 */}
-                        {(() => {
-                            const selectedOption = itemOptions.find(opt => opt.commonItemId === promptManager.commonItemId);
+                    {/* ⚙️ div 기반 탭 메뉴 세팅 */}
+                    <div className="modal-tab-header" style={{ display: 'flex', borderBottom: '2px solid #e2e8f0', marginBottom: '16px', gap: '8px' }}>
+                    <div 
+                        onClick={() => setActiveTab('GUIDE') } 
+                        style={{ padding: '10px 16px', fontSize: '14px', fontWeight: 'bold', borderBottom: activeTab === 'GUIDE' ? '3px solid #dd6b20' : '3px solid transparent', color: activeTab === 'GUIDE' ? '#dd6b20' : '#718096', cursor: 'pointer', userSelect: 'none' }}
+                    >
+                        💡 시스템 프롬프트 작성 가이드라인
+                    </div>
+                    <div 
+                        onClick={() => setActiveTab('VALIDATE')} 
+                        style={{ padding: '10px 16px', fontSize: '14px', fontWeight: 'bold', borderBottom: activeTab === 'VALIDATE' ? '3px solid #4a90e2' : '3px solid transparent', color: activeTab === 'VALIDATE' ? '#4a90e2' : '#718096', cursor: 'pointer', userSelect: 'none' }}
+                    >
+                        🔷 시스템 프롬프트 유효성 검증 메시지
+                    </div>
+
+                </div>            
+                
+                    
+                    {(() => {
+                        const selectedOption = itemOptions.find(opt => opt.commonItemId === promptManager.commonItemId);
+                        
+                        const assistantText = promptManager.commonPromptAssistText || selectedOption?.commonPromptAssistText || '';
+                        const validateText = promptManager.commonPromptValidateText || selectedOption?.commonPromptValidateText || '';
+
+                        return (
+                        <>
                             
-                            const assistantText = promptManager.commonPromptAssistText || selectedOption?.commonPromptAssistText || '';
-                            const validateText = promptManager.commonPromptValidateText || selectedOption?.commonPromptValidateText || '';
-
-                            return (
-                            <>
-                                {/* 도움말 가이드 박스 */}
+                            {/* [1번 탭: GUIDE] 활성화 시 작동 */}
+                            {activeTab === 'GUIDE' && (            
                                 <div style={{ backgroundColor: '#fdfaf2', borderLeft: '5px solid #e2a12e', padding: '16px', borderRadius: '4px', boxSizing: 'border-box' }}>
-                                <span style={{ fontWeight: 'bold', color: '#333333', display: 'block', marginBottom: '8px', fontSize: '14px' }}>
-                                    💡 시스템 프롬프트 작성 가이드라인
-                                </span>
-                                <div style={{ fontSize: '13px', color: '#555555', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
-                                    {assistantText || '왼쪽에서 아이템 ID를 선택하면 전용 작성 가이드라인이 이곳에 노출됩니다.'}
-                                </div>
-                                </div>
+                                    <div style={{ fontSize: '13px', color: '#555555', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
+                                        {assistantText || '왼쪽에서 아이템 ID를 선택하면 전용 작성 가이드라인이 이곳에 노출됩니다.'}
+                                    </div>
+                                </div>    
+                            )}
 
-                                {/* 유효성 메시지 미리보기 박스 */}
+                            {/* [2번 탭: VALIDATE] 활성화 시 작동 */}
+                            {activeTab === 'VALIDATE' && (    
                                 <div style={{ backgroundColor: '#f0f7ff', borderLeft: '5px solid #4a90e2', padding: '16px', borderRadius: '4px', boxSizing: 'border-box' }}>
-                                <span style={{ fontWeight: 'bold', color: '#2b5a9e', display: 'block', marginBottom: '8px', fontSize: '14px' }}>
-                                    🔷 AI 검증관 유효성 검사 기준 (미리보기)
-                                </span>
-                                <div style={{ fontSize: '13px', color: '#4a6b9d', whiteSpace: 'pre-wrap', lineHeight: '1.6'}}>
-                                    {validateText || '아이템 ID를 선택하면 LLM이 체크할 자체 유효성 검사 요약 개요가 노출됩니다.'}
+                                    <div style={{ fontSize: '13px', color: '#4a6b9d', whiteSpace: 'pre-wrap', lineHeight: '1.6'}}>
+                                        {validateText || '아이템 ID를 선택하면 LLM이 체크할 자체 유효성 검사 요약 개요가 노출됩니다.'}
+                                    </div>
                                 </div>
-                                </div>
-                            </>
-                            );
-                        })()}
-
+                            )}                            
+                        </>
+                        );
+                    })()}
+                    
                     </div>
 
               </div>

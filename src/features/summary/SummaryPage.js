@@ -252,6 +252,11 @@ function SummaryPage() {
             
             const data = JSON.parse(jsonStr);
             
+            if (data.status === 'SUCCESS') {
+                const docId = data.document_id || '';
+                alert(`[금융 분석 최종 완료]\n\n 금융 리포트의 4단계 자가 검수가 무사히 종료되었으며, 마스터 데이터가 데이터베이스(ID: ${docId})에 안전하게 일괄 적재되었습니다!`);
+            }
+
             if (data.status) setStatus(data.status);
             if (data.progress) setProgress(data.progress);
             

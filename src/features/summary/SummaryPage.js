@@ -267,7 +267,8 @@ function SummaryPage() {
                   return [...prev, { 
                     id: Date.now() + Math.random(), 
                     text: data.result_chunk
-                    , pageSource: null 
+                    , pageSource: null
+                    , targetPages: null
                     , status_code: data.status_code || 'SUCCESS'     
                   }];
                 }
@@ -285,12 +286,14 @@ function SummaryPage() {
 
             if (data.page_source) {
               const targetPageNum = parseInt(data.page_source, 10);
+              const targetPages = data.target_pages;
               setSummaryBlocks((prev) => 
                 prev.map((block, idx) => 
                   idx === prev.length - 1 
                     ? { 
                         ...block, 
                         pageSource: targetPageNum,
+                        targetPages: targetPages,
                         status_code: data.status_code || block.status_code || 'SUCCESS'
 
                       } 
@@ -423,10 +426,17 @@ function SummaryPage() {
                 }
               }
 
+              let targetPagesDisplayNum = "";
+              const targetPageList = block.targetPages;
+              if (targetPageList) {
+                targetPagesDisplayNum = targetPageList.join(',');
+              }  
+
               // 요구사항 매핑: 제목 양식 강제 치환 고정 및 유령 문자 선출 차단 가드레일
-              const finalHeaderTitle = pageDisplayNum ? `### ${pageDisplayNum}페이지 요약` : "📝 투자 정보 분석 중...";
+              const finalHeaderTitle = pageDisplayNum ? `[${pageDisplayNum}](${targetPagesDisplayNum})` : "📝 투자 정보 분석 중...";
 
               // 본문 내부의 모든 구형 마크다운 및 태그 찌꺼기 문자열 100% 완전 정제 살균
+              // let cleanBodyText = block.text;
               let cleanBodyText = block.text
                 .replace(/START_PAGE_NUM:\d+/g, "")
                 .replace(/START_PAGE_NUM:/g, "")
@@ -463,9 +473,9 @@ function SummaryPage() {
               };
 
               const STATUS_BADGE_MAP = {
-                SUCCESS: { bg: '#d93838', text: '🔴 필수 체크' },
+                SUCCESS: { bg: '#d93838', text: '🔴 필수' },
                 ANOMALY_LOW_SCORE: { bg: '#e03131', text: '⚠️ 품질 과락 (재연산 대기)' },
-                SKIP_TIMEOUT: { bg: '#6c757d', text: '⚪ 지연 스킵' }
+                SKIP_TIMEOUT: { bg: '#6c757d', text: '⚪ 지연' }
               };
 
               const cardClass = STATUS_CLASS_MAP[currentStatus] || 'card-status-success';
@@ -476,7 +486,8 @@ function SummaryPage() {
               const isImportantPage = currentStatus === 'SUCCESS';
 
 
-              //console.log("currentStatus : ", currentStatus);
+              // console.log("pageDisplayNum : ", pageDisplayNum);
+              // console.log("currentStatus : ", currentStatus);
 
               return (
                 <div 
@@ -490,36 +501,45 @@ function SummaryPage() {
                         {finalHeaderTitle}
                       </span>
                       {/* 💡 서버 상태 코드 및 중요도에 따른 배지 스마트 노출 */}
-                      {(currentStatus !== 'SUCCESS' || isImportantPage) && (
-                        <span style={{ backgroundColor: badge.bg, color: '#ffffff', fontSize: '11px', fontWeight: '800', padding: '2px 8px', borderRadius: '4px' }}>
-                          {badge.text}
-                        </span>
+                      {(currentStatus !== 'SUCCESS' || isImportantPage) && (                        
+                          <span style={{ backgroundColor: badge.bg, color: '#ffffff', fontSize: '11px', fontWeight: '800', padding: '2px 8px', borderRadius: '4px' }}>
+                            {badge.text}
+                          </span>                        
                       )}
                     </div>
+                  </div>
 
-                    {pageDisplayNum ? (                      
-
-                      <button
+                  <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '8px', justifyContent: 'flex-end', minWidth: '50%', width: '100%'}}>
+                    {targetPageList && targetPageList.map((num) => (                         
+                        <button
+                        key={num}
                         onClick={() => {
-
-                          const targetPage = parseInt(pageDisplayNum, 10);
-                          setPageNumber(targetPage); 
-                          setInputPage(targetPage.toString()); 
-                          setIsOpenModal(true);      
+                          const targetPage = parseInt(num, 10);
+                          setPageNumber(targetPage);
+                          setInputPage(targetPage.toString());
+                          setIsOpenModal(true);
                         }}
                         data-bypass="true"
                         className="btn-source"
-                        style={{ display: 'inline-flex', alignItems: 'center', color: '#ffffff', fontSize: '12px', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', border: 'none', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', cursor: 'pointer', whiteSpace: 'nowrap' }}
-                        
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          color: '#ffffff',
+                          fontSize: '12px',
+                          fontWeight: '700',
+                          padding: '4px 12px',
+                          borderRadius: '20px',
+                          border: 'none',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap'
+                        }}
                       >
-                        📖 원문 {pageDisplayNum}쪽 확인하기
-                      </button>                          
-                      
-                    ) : (
-                      <span style={{ fontSize: '11px', color: '#a3b1cc', fontStyle: 'italic' }}>추론 대기 중..</span>
-                    )}
-                  </div>
-
+                        {num}
+                      </button>                      
+                      ))}      
+                    </div>
+                  
                   {/* 3줄 리포트 본문 출력 영역 (글자 크기 16px 압축형 고수 및 필독 카드는 글씨를 더 또렷하게 강조) */}
                   <div style={{ fontSize: '16px', lineHeight: '1.45', color: '#111111', fontWeight: (isImportantPage && currentStatus === 'SUCCESS') ? '600' : '500', whiteSpace: 'pre-wrap', letterSpacing: '-0.4px', flexGrow: 1, marginBottom: '10px' }}>
                     {cleanBodyText || <span style={{ color: '#a3b1cc', fontStyle: 'italic', fontSize: '14px' }}>금융 데이터 독해 및 구조화 번역 중...</span>}

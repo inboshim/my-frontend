@@ -268,6 +268,7 @@ function SummaryPage() {
                     id: Date.now() + Math.random(), 
                     text: data.result_chunk
                     , pageSource: null
+                    , subTitle: null
                     , targetPages: null
                     , status_code: data.status_code || 'SUCCESS'     
                   }];
@@ -287,12 +288,14 @@ function SummaryPage() {
             if (data.page_source) {
               const targetPageNum = parseInt(data.page_source, 10);
               const targetPages = data.target_pages;
+              const subTitle = data.sub_title;
               setSummaryBlocks((prev) => 
                 prev.map((block, idx) => 
                   idx === prev.length - 1 
                     ? { 
                         ...block, 
                         pageSource: targetPageNum,
+                        subTitle: subTitle,
                         targetPages: targetPages,
                         status_code: data.status_code || block.status_code || 'SUCCESS'
 
@@ -435,6 +438,8 @@ function SummaryPage() {
               // 요구사항 매핑: 제목 양식 강제 치환 고정 및 유령 문자 선출 차단 가드레일
               const finalHeaderTitle = pageDisplayNum ? `[${pageDisplayNum}](${targetPagesDisplayNum})` : "📝 투자 정보 분석 중...";
 
+              const finalFrontHeaderTitle = block.subTitle;
+
               // 본문 내부의 모든 구형 마크다운 및 태그 찌꺼기 문자열 100% 완전 정제 살균
               // let cleanBodyText = block.text;
               let cleanBodyText = block.text
@@ -496,7 +501,13 @@ function SummaryPage() {
                 >
                   {/* 상단 타이틀 배너 (좌측: 대제목 및 빨간 배지 / 우측 반대편: 짙은 하늘색 알약 버튼 1열 정렬) */}
                   <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '6px', marginBottom: '10px', borderBottom: '1px solid #eef2f7' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="header-left-title" style={{ display: 'flex', alignItems: 'center' }}>
+                      <span style={{ fontSize: '20px', fontWeight: '500', letterSpacing: '-0.3px' }}>
+                        {finalFrontHeaderTitle}
+                      </span>
+                    </div>
+                    <div className="header-right-meta" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      
                       <span className="card-title" style={{ fontSize: '15px', fontWeight: '700', letterSpacing: '-0.3px' }}>
                         {finalHeaderTitle}
                       </span>

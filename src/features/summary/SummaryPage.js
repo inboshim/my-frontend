@@ -5,7 +5,11 @@ import AuditModal from '../rag/AuditModal'; // 위에서 만든 모달 임포트
 import '../../styles/SummaryPage.css'; // 실제 프로젝트 폴더 경로에 맞춰 선언 확인
 
 //PDF worker js 파일.
-pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs`;
+// pdfjs.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 // 1. 컴포넌트 상단에 전역 취소 컨트롤러 변수 선언 (또는 useRef 사용)
 let summaryAbortController = null;

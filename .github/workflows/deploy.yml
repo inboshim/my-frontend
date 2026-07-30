@@ -12,21 +12,11 @@ jobs:
       - name: 소스코드 체크아웃 (최신 프론트 소스 동기화)
         uses: actions/checkout@v4
 
-      - name: 의존성 패키지 설치 (npm install)
+      - name: 🔥 1. 의존성 패키지 설치
         run: |
           npm install
 
-      - name: 🔥 [PDF 워커 종결자] Vite 빌드 전 빌드 산출물 폴더 정돈 스크립트
-        run: |
-          # 1. 빌드 전 public 폴더에 확실하게 pdf.worker.min.js 파일 배치 보장
-          if (Test-Path "node_modules/pdfjs-dist/build/pdf.worker.min.mjs") {
-              Copy-Item "node_modules/pdfjs-dist/build/pdf.worker.min.mjs" "public/pdf.worker.min.js" -Force
-          } elseif (Test-Path "node_modules/pdfjs-dist/build/pdf.worker.min.js") {
-              Copy-Item "node_modules/pdfjs-dist/build/pdf.worker.min.js" "public/pdf.worker.min.js" -Force
-          }
-        shell: powershell
-
-      - name: 🔥 리액트 소스코드 최종 정적 빌드
+      - name: 🔥 2. 리액트 최신 소스 자동 빌드 (Nginx 폴더 자동 반영)
         run: |
           npm run build
 

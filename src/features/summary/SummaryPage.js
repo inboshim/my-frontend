@@ -655,7 +655,9 @@ function SummaryPage() {
 
             <div style={{ flex: 1, width: '100%', overflowY: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', backgroundColor: '#f4f6f8', padding: '15px', borderRadius: '6px', boxSizing: 'border-box' }}>
               <div style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.06)', backgroundColor: '#fff' }}>
-                <Document file={selectedFile ? URL.createObjectURL(selectedFile) : null} onLoadSuccess={onDocumentLoadSuccess}
+                <Document 
+                file={selectedFile instanceof Blob ? URL.createObjectURL(selectedFile) : selectedFile} 
+                onLoadSuccess={onDocumentLoadSuccess}
                 loading={<div className="p-4 text-sm text-blue-600 font-medium">PDF 원문 엔진 가동 중...</div>}>
                   <Page pageNumber={pageNumber} width={650} scale={scale} renderTextLayer={false} renderAnnotationLayer={false} />
                 </Document>

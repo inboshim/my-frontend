@@ -33,3 +33,4 @@ jobs:
       run: |
         cd C:\nginx
         .\nginx.exe -s reload
+        

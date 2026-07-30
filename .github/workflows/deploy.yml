@@ -1,0 +1,35 @@
+name: React Production Deploy
+
+on:
+  push:
+    branches: [ "main" ]  # main 브랜치에 푸시되거나 커밋되면 작동합니다.
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted  # 내 PC에 설치한 actions-runner를 사용합니다.
+
+    steps:
+    - name: 소스코드 체크아웃
+      uses: actions/checkout@v4
+
+    - name: 노드 환경 세팅
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+
+    - name: 의존성 설치 및 리액트 상용 빌드
+      run: |
+        npm install
+        npm run build
+
+    - name: Nginx html 폴더로 배포 파일 이동
+      run: |
+        # 기존 Nginx html 폴더 안의 구버전 파일들을 깔끔하게 지웁니다.
+        Remove-Item -Path "C:\nginx\html\*" -Recurse -Force -ErrorAction SilentlyContinue
+        # 빌드된 최신 파일들을 Nginx 운영 폴더로 복사합니다.
+        Copy-Item -Path ".\build\*" -Destination "C:\nginx\html" -Recurse -Force
+        
+    - name: Nginx 웹 서버 새로고침 (설정 반영)
+      run: |
+        cd C:\nginx
+        .\nginx.exe -s reload

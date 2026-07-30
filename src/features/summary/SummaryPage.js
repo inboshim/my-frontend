@@ -508,7 +508,7 @@ function SummaryPage() {
                   <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '6px', marginBottom: '10px', borderBottom: '1px solid #eef2f7' }}>
                     <div className="header-left-title" style={{ display: 'flex', alignItems: 'center' }}>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                      {finalFrontHeaderTitle.trim().split('\\').map((item, idx) => (
+                      {finalFrontHeaderTitle && finalFrontHeaderTitle.trim().split('\\').map((item, idx) => (
                         <span key={idx} style={{ 
                           background: '#F5E6C4', 
                           padding: '4px 8px', 

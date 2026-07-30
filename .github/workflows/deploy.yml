@@ -12,14 +12,6 @@ jobs:
       - name: 소스코드 체크아웃 (최신 프론트 소스 동기화)
         uses: actions/checkout@v4
 
-      - name: 🔥 1. 의존성 패키지 설치
-        run: |
-          npm install
-
-      - name: 🔥 2. 리액트 최신 소스 자동 빌드 (Nginx 폴더 자동 반영)
-        run: |
-          npm run build
-
       - name: 프론트 정적 자산 동기화 완료 알림
         run: |
-          echo "🎉 최신 리액트 소스코드가 깃허브로부터 빌드 완료되어 Nginx 배포 폴더(build)에 안전하게 반영되었습니다!"
+          echo "🎉 최신 빌드 완료된 리액트 소스코드가 깃허브로부터 Nginx 배포 폴더(build)에 안전하게 반영되었습니다!"

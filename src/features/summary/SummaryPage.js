@@ -439,6 +439,7 @@ function SummaryPage() {
               const finalHeaderTitle = pageDisplayNum ? `[${pageDisplayNum}](${targetPagesDisplayNum})` : "📝 투자 정보 분석 중...";
 
               const finalFrontHeaderTitle = block.subTitle;
+              // const subTitleItems = finalFrontHeaderTitle.split('\\');
 
               // 본문 내부의 모든 구형 마크다운 및 태그 찌꺼기 문자열 100% 완전 정제 살균
               // let cleanBodyText = block.text;
@@ -502,9 +503,22 @@ function SummaryPage() {
                   {/* 상단 타이틀 배너 (좌측: 대제목 및 빨간 배지 / 우측 반대편: 짙은 하늘색 알약 버튼 1열 정렬) */}
                   <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '6px', marginBottom: '10px', borderBottom: '1px solid #eef2f7' }}>
                     <div className="header-left-title" style={{ display: 'flex', alignItems: 'center' }}>
-                      <span style={{ fontSize: '20px', fontWeight: '500', letterSpacing: '-0.3px' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {finalFrontHeaderTitle.trim().split('\\').map((item, idx) => (
+                        <span key={idx} style={{ 
+                          background: '#F5E6C4', 
+                          padding: '4px 8px', 
+                          borderRadius: '4px', 
+                          fontSize: '13px',
+                          fontWeight: '500'
+                        }}>
+                          {item.replace(/\|\|/g, ' ')}
+                        </span>
+                      ))}
+                    </div>
+                      {/* <span style={{ fontSize: '20px', fontWeight: '500', letterSpacing: '-0.3px' }}>
                         {finalFrontHeaderTitle}
-                      </span>
+                      </span> */}
                     </div>
                     <div className="header-right-meta" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       

@@ -10,8 +10,8 @@ RUN npm run build
 FROM nginx:alpine
 COPY --from=build /app/build /usr/share/nginx/html
 
-# 3단계: Nginx 설정 파일 도커 Nginx 설정으로 복사.
-COPY nginx.conf /etc/nginx/nginx.conf
+# 3단계: 도커 Nginx 설정 mjs minetype 설정 추가.
+RUN sed -i 's/default_type application\/javascript;/types { application\/javascript mjs; } default_type application\/javascript;/g' /etc/nginx/nginx.conf
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

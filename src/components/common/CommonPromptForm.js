@@ -1,9 +1,18 @@
 import React, {useState , useRef, useEffect} from 'react';
 import axios from 'axios';
+import { isOutOfBounds } from '../../utils/validation';
+
+import '../../styles/GroupGrid.css';
+import { AgGridReact } from 'ag-grid-react';
+
+import { ModuleRegistry, TextEditorModule, SelectEditorModule } from 'ag-grid-community';
+
+// ⚡ 화면이 켜지기 전, AG-Grid 최신 엔진에 편집 일꾼 모듈 2종을 공식 등록합니다!
+ModuleRegistry.registerModules([TextEditorModule, SelectEditorModule]);
 
 const API_BASE_URL = process.env.REACT_APP_API_URL;
 
-export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowData, onSaveResult, onClose }) {
+export default function CommonPromptForm({ mode = 'CREATE', initialRowData, onSaveResult, onClose }) {
 
     const promptIdRef = useRef(null);
     const commonItemIdRef = useRef(null);    
@@ -17,12 +26,72 @@ export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowD
 
     const [activeTab, setActiveTab] = useState("GUIDE");  
 
+    const [promptOptions, setPromptOptions] = useState([]);
+    const [gridApi, setGridApi] = useState(null);
+
     // 🌟 [이동 완료] 입력 폼 데이터 상태를 자식 내부에서 직접 관리
     const [promptManager, setPromptManager] = useState(
     mode === 'CREATE' 
         ? { promptId:null, commonItemId: '', systemPromptText: '', nistHallucinationThreshold: null, nistToxicityThreshold: null , isActive: true, commonPromptAssistText: null , commonPromptValidateText: null }
         : initialRowData // 수정 모드일 때는 부모가 넘겨준 행 데이터 적용
     );
+
+    const columnDefs = [    
+    { headerName: "입력(최대)", field: "numCtx", width:93, editable: true,
+        valueParser: params => {
+            const clean = params.newValue.toString().replace(/[^0-9]/g, '');
+            return clean.length <= 4 ? Number(clean) : Number(clean.slice(0, 4));
+        }
+    },
+    
+    { headerName: "출력(최대)", field: "numPredict", width:93, editable: true,
+        valueParser: params => {
+            const clean = params.newValue.toString().replace(/[^0-9]/g, '');
+            return clean.length <= 4 ? Number(clean) : Number(clean.slice(0, 4));
+        }
+    },
+    { headerName: "난수제어", field: "temperature", width:90, editable: true,
+        valueParser: params => {
+            let val = params.newValue.toString().replace(/[^0-9.]/g, '');
+            const parts = val.split('.');
+            if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
+            if (parts[1] && parts[1].length > 2) val = parts[0] + '.' + parts[1].slice(0, 2);
+            return val ? Number(val) : 0.00;
+        }
+
+    },
+    { headerName: "반복폭주", field: "repeatPenalty", width:90, editable: true,
+        valueParser: params => {
+            let val = params.newValue.toString().replace(/[^0-9.]/g, '');
+            const parts = val.split('.');
+            if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
+            if (parts[1] && parts[1].length > 2) val = parts[0] + '.' + parts[1].slice(0, 2);
+            return val ? Number(val) : 1.10;
+        }
+
+    },
+    { headerName: "Low VRAM", field: "lowVram", width:102, editable: true,
+        valueFormatter: params => params.value ? 'True' : 'False',
+        cellEditor: 'agSelectCellEditor',
+        cellEditorParams: {            
+            values: ['false', 'true']
+        },        
+        valueParser: params => params.newValue === true || params.newValue === 'true',
+        cellEditorParams: {
+            values: [false, true],
+            valueFormatter: params => params.value ? 'True' : 'False'
+        }
+    }    
+        
+  ];
+
+  const defaultColDef = {
+    resizable: true,
+    sortable: false,
+    filter: false,
+    singleClickEdit: true, 
+    cellStyle: { textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }
+};
 
     // ========================================================
     // 1. [추가] 에이전트 키별 동적 플레이스홀더 텍스트 맵 정의
@@ -51,7 +120,7 @@ export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowD
     };
 
     // 현재 선택된 아이템 ID에 매핑되는 예시가 없다면 보여줄 기본 방어 문구
-    const currentPlaceholder = placeholderMap[promptManager.commonItemId] || "에이전트 유형을 선택하시면 전용 프롬프트 작성 가이드 템플릿이 여기에 노출됩니다.";
+    const currentPlaceholder = placeholderMap[promptManager.commonItemId] || "프롬프트 ID을 선택하시면 전용 프롬프트 작성 가이드 템플릿이 여기에 노출됩니다.";
 
 
     // 3. 실시간 입력 값 제한 핸들러 (DB 사이즈 및 정규식 완벽 방어)
@@ -102,16 +171,27 @@ export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowD
     };
     
     useEffect(() => {
-        fetchItemCodes();
+        fetchItemCodes("TEXT");
+        const selectedPromptId = promptManager.promptId;
+        console.log("프롬프트 ID ::: ", selectedPromptId);
+        fetchPromptOptions(selectedPromptId);
     }, []);
 
+    const onGridGroupReady = (params) => {
+        
+        // 1. 그리드 API 백엔드 컨트롤러 등록
+        setGridApi(params.api);
+        
+    }; 
+
     // 3. 백엔드에서 공통 그룹 마스터 목록 호출
-    const fetchItemCodes = async () => {
+    const fetchItemCodes = async (groupType) => {
         try {        
         
             const response = await axios.get(`${API_BASE_URL}/api/admin/code/code-item/get_all`, {
             params: {
                 commonGroupId : "",
+                commonGroupType : groupType,
                 commonItemId : "",
                 commonItemName : "",
                 isUse : true,
@@ -124,6 +204,25 @@ export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowD
 
         } catch (error) {
             console.error("아이템코드 로드 실패:", error);
+        } finally {        
+        }
+    };
+
+    // 3. 백엔드에서 공통 그룹 마스터 목록 호출
+    const fetchPromptOptions = async (promptId) => {
+        try {        
+        
+            const response = await axios.get(`${API_BASE_URL}/api/admin/prompts/prompt_options`, {
+            params: {
+                    promptId : promptId                
+                }
+            });
+        
+        console.log("프롬프트 데이타 ::: ", response.data);
+        setPromptOptions(response.data);      
+
+        } catch (error) {
+            console.error("프롬프트 옵션 로드 실패:", error);
         } finally {        
         }
     };
@@ -142,7 +241,7 @@ export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowD
         alert("시스템 프롬프트 텍스트를 입력해 주세요.");
         systemPromptTextRef.current.focus();        
         return;
-    }
+    }    
 
     try {
 
@@ -226,7 +325,7 @@ export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowD
 
     // [체크 1-1] 에이전트 아이템 ID 필수값
     if (!promptManager.commonItemId) {
-      alert('에이전트 아이템 ID를 선택해 주세요.');
+      alert('프롬프트 ID를 선택해 주세요.');
       commonItemIdRef.current.focus(); // 🌟 Group ID 창으로 포커스 이동
       return;
     }
@@ -236,14 +335,118 @@ export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowD
         alert("⚠️ 시스템 프롬프트 본문을 최소 10자 이상 성의 있게 작성해 주세요.");
         systemPromptTextRef.current.focus();
         return;
+    }    
+
+    // 2. 그리드 옵션 3건 루프 검사
+    for (const [index, option] of promptOptions.entries()) {
+        const typeName = option.commonItemId; // 예: TYPE_A, TYPE_B, TYPE_C
+
+        // ① 입력(최대) 검증 (범위 예시: 1 ~ 8192)
+        if (isOutOfBounds(option.numCtx, 1, 8192)) {
+            alert(`[${typeName}] 입력(최대) 값은 1에서 8192 사이의 숫자여야 합니다.`);
+            
+            // 에러 발생한 행(index)과 셀(numCtx)로 포커스 이동 및 편집 모드 활성화
+            if (gridApi) {
+            gridApi.setFocusedCell(index, 'numCtx');
+            gridApi.startEditingCell({ rowIndex: index, colKey: 'numCtx' });
+            }
+            return;
+        }
+
+        // ② 출력(최대) 검증 (범위 예시: 1 ~ 4000)
+        if (isOutOfBounds(option.numPredict, 1, 4000)) {
+            alert(`[${typeName}] 출력(최대) 값은 1에서 4000 사이의 숫자여야 합니다.`);
+            
+            if (gridApi) {
+            gridApi.setFocusedCell(index, 'numPredict');
+            gridApi.startEditingCell({ rowIndex: index, colKey: 'numPredict' });
+            }
+            return;
+        }
+
+        // ③ 난수제어(temperature) 검증 (범위: 0.0 ~ 2.0)
+        if (isOutOfBounds(option.temperature, 0.0, 2.0)) {
+            alert(`[${typeName}] 난수제어 값은 0.0에서 2.0 사이의 숫자여야 합니다.`);
+            
+            if (gridApi) {
+            gridApi.setFocusedCell(index, 'temperature');
+            gridApi.startEditingCell({ rowIndex: index, colKey: 'temperature' });
+            }
+            return;
+        }
+
+        // ④ 반복폭주(repeatPenalty) 검증 (범위: 1.0 ~ 2.0)
+        if (isOutOfBounds(option.repeatPenalty, 1.0, 2.0)) {
+            alert(`[${typeName}] 반복폭주 값은 1.0에서 2.0 사이의 숫자여야 합니다.`);
+            
+            if (gridApi) {
+            gridApi.setFocusedCell(index, 'repeatPenalty');
+            gridApi.startEditingCell({ rowIndex: index, colKey: 'repeatPenalty' });
+            }
+            return;
+        }
+
+        // ⑤ Low VRAM 검증 (반드시 False여야 하는 조건)
+        // 화면 상에서 문자열 "False" 또는 불리언 false 모두 대응할 수 있도록 비교 처리
+        if (option.lowVram === 'True' || option.lowVram === true) {
+            alert(`[${typeName}] Low VRAM은 사용할 수 없습니다. False로 변경해 주세요.`);
+            
+            if (gridApi) {
+            gridApi.setFocusedCell(index, 'lowVram');
+            gridApi.startEditingCell({ rowIndex: index, colKey: 'lowVram' });
+            }
+            return;
+        }
     }
 
     // 2. [비동기 통신] FastAPI 백엔드로 데이터 전송
     try {
+        
+        // [핵심 추가] 현재 어떤 셀이든 편집 중이라면, 그 상태를 즉시 강제 종료하고 값을 그리드에 반영시킵니다.
+        if (gridApi) {
+            gridApi.stopEditing(); 
+        }
 
-        console.log("저장 데이타 ::: ", promptManager);
+        // 만약 앞서 연결했던 cellValueChanged 핸들러가 반영되는 React State 시간(비동기)이 필요하다면,
+        // gridApi에서 최신 데이터를 그 자리에서 즉시 긁어와 Payload를 만드는 것이 가장 안전합니다.
+        const latestOptions = [];
+        if (gridApi) {
+            gridApi.forEachNode((node) => {
+            latestOptions.push(node.data);
+            });
+        }       
+
+        setPromptOptions(latestOptions);        
+
+        // 1. 백엔드 스키마 명칭에 맞게 딕셔너리(객체) 정제
+    const savePayload = {
+            // 신규 추가일 때 prompt_id가 null이나 undefined면 백엔드에서 에러가 날 수 있으므로, 
+            // 현재 선택된 상태값이 없다면 명시적으로 빈 문자열("") 또는 null 처리를 해줍니다.
+            prompt_id: promptManager.promptId || null, 
+            
+            // [수정] commonitemid -> common_item_id 로 언더바(_) 추가
+            common_item_id: promptManager.commonItemId || "summary_system", 
+            
+            system_prompt_text: promptManager.systemPromptText,
+            nist_hallucination_threshold: Number(promptManager.nistHallucinationThreshold),
+            nist_toxicity_threshold: Number(promptManager.nistToxicityThreshold),
+            is_active: promptManager.isActive,
+            
+            // 하단 그리드 옵션 3건 (필드명 스네이크 케이스 매핑)
+            prompt_options: promptOptions.map(option => ({
+            common_item_id: option.commonItemId,
+            num_ctx: Number(option.numCtx),
+            num_predict: Number(option.numPredict),
+            temperature: Number(option.temperature),
+            repeat_penalty: Number(option.repeatPenalty),
+            low_vram: option.lowVram === 'True' || option.lowVram === true
+            }))
+        };
+
+        //console.log("저장 데이타 ::: ", savePayload);
+        
         // 💡 백엔드 라우터에 설정된 UPSERT 엔드포인트 주소로 POST 요청
-        const response = await axios.post(`${API_BASE_URL}/api/admin/prompts/update`, promptManager, {
+        const response = await axios.post(`${API_BASE_URL}/api/admin/prompts/update`, savePayload, {
         headers: {
             'Content-Type': 'application/json'
         }
@@ -251,7 +454,7 @@ export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowD
 
         // 3. [성공 처리] 백엔드가 200 OK 또는 201 Created를 리턴했을 때
         if (response.status === 200 || response.status === 201) {
-        alert('그룹 코드가 정상적으로 저장 되었습니다.');
+        alert('프롬프트가 정상적으로 저장 되었습니다.');
         
         // 💡 부모 페이지에게 저장 완료 신호 전송 (좌측 AG-Grid 목록 새로고침 유발)
         onSaveResult(true); 
@@ -335,7 +538,7 @@ export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowD
           
 
                         <div className="modal-form-group" style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: '6px', color: '#4a5568' }}>아이템 ID</label>        
+                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: '6px', color: '#4a5568' }}>프롬프트 ID</label>        
                         <select 
                             name="commonItemId"
                             value={promptManager.commonItemId}
@@ -369,74 +572,10 @@ export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowD
                                 ref={systemPromptTextRef} 
                                 onChange={handleInputChange}
                                 placeholder={currentPlaceholder}                        
-                                rows={20}
+                                rows={30}
                                 className="modal-textarea-control"
                             />
-                        </div>
-
-                        {/* 📌 [고도화 3] 0.00 단위 입력 가능한 숫자형 항목 2개 추가 (나란히 배치) */}
-                        <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
-                            {/* 환각 임계치 입력구역 */}
-                            <div style={{ flex: 1 }}>
-                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: '#4a5568' }}>
-                                NIST 환각 임계치
-                                </label>
-                                <input 
-                                    type="number" 
-                                    name="nistHallucinationThreshold" 
-                                    value={promptManager.nistHallucinationThreshold} 
-                                    ref={nistHallucinationThresholdRef} 
-                                    onChange={handleInputChange}
-                                    step="0.05"
-                                    min="0"
-                                    max="1"
-                                    placeholder="0.75"
-                                    style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} 
-                                    defaultValue="0" 
-                                />
-                                <span style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: '#718096', lineHeight: '1.4' }}>
-                                * 범위: 0.0 ~ 1.0 (권장: 0.75)<br />높을수록 원문 대조가 엄격해져 환각을 방지합니다.
-                                </span>
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: '#4a5568' }}>
-                                NIST 유해성 임계치
-                                </label>
-                                <input 
-                                    type="number" 
-                                    name="nistToxicityThreshold" 
-                                    value={promptManager.nistToxicityThreshold} 
-                                    ref={nistToxicityThresholdRef} 
-                                    onChange={handleInputChange}
-                                    step="0.05"
-                                    min="0"
-                                    max="1"
-                                    placeholder="0.30"
-                                    style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} 
-                                    defaultValue="0" 
-                                />
-                                <span style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: '#718096', lineHeight: '1.4' }}>
-                                * 범위: 0.0 ~ 1.0 (권장: 0.30)<br />이 값보다 독성 점수가 높으면 출력을 사전 차단합니다.
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* 활성 유무 체크박스 */}
-                        <div style={{ marginBottom: '24px' }}>
-                            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '6px', color: '#4a5568' }}>활성 유무</label>
-                            <label className={`checkbox-container ${mode === 'CREATE' ? 'disabled' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: mode === 'CREATE' ? 'not-allowed' : 'pointer' }}>
-                                <input 
-                                    type="checkbox" 
-                                    name="isActive" 
-                                    checked={promptManager.isActive}
-                                    onChange={handleInputChange}
-                                    disabled={mode === 'CREATE'} 
-                                />
-                                <span style={{ fontSize: '14px', color: '#4a5568' }}>
-                                    {promptManager.isActive ? '사용 (True)' : '미사용 (False)'}
-                                </span>
-                            </label>
-                        </div>
+                        </div>                        
 
                         {/* 최종 버튼 영역 */}                        
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
@@ -493,16 +632,30 @@ export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowD
                         onClick={() => setActiveTab('GUIDE') } 
                         style={{ padding: '10px 16px', fontSize: '14px', fontWeight: 'bold', borderBottom: activeTab === 'GUIDE' ? '3px solid #dd6b20' : '3px solid transparent', color: activeTab === 'GUIDE' ? '#dd6b20' : '#718096', cursor: 'pointer', userSelect: 'none' }}
                     >
-                        💡 시스템 프롬프트 작성 가이드라인
+                        💡 작성 가이드라인
                     </div>
                     <div 
                         onClick={() => setActiveTab('VALIDATE')} 
                         style={{ padding: '10px 16px', fontSize: '14px', fontWeight: 'bold', borderBottom: activeTab === 'VALIDATE' ? '3px solid #4a90e2' : '3px solid transparent', color: activeTab === 'VALIDATE' ? '#4a90e2' : '#718096', cursor: 'pointer', userSelect: 'none' }}
                     >
-                        🔷 시스템 프롬프트 유효성 검증 메시지
+                        🔷 유효성 검증 메시지
                     </div>
+                    <div 
+                        onClick={() => setActiveTab('LLM_OPTIONS')} 
+                        style={{ 
+                            padding: '10px 16px', 
+                            fontSize: '14px', 
+                            fontWeight: 'bold', 
+                            borderBottom: activeTab === 'LLM_OPTIONS' ? '3px solid #6b5ced' : '3px solid transparent', 
+                            color: activeTab === 'LLM_OPTIONS' ? '#6b5ced' : '#718096', 
+                            cursor: 'pointer', 
+                            userSelect: 'none' 
+                        }}
+                    >
+                        ⚙️엔진 옵션 & NIST 설정
+                    </div>            
+                </div>    
 
-                </div>            
                 
                     
                     {(() => {
@@ -518,7 +671,7 @@ export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowD
                             {activeTab === 'GUIDE' && (            
                                 <div style={{ backgroundColor: '#fdfaf2', borderLeft: '5px solid #e2a12e', padding: '16px', borderRadius: '4px', boxSizing: 'border-box' }}>
                                     <div style={{ fontSize: '13px', color: '#555555', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
-                                        {assistantText || '왼쪽에서 아이템 ID를 선택하면 전용 작성 가이드라인이 이곳에 노출됩니다.'}
+                                        {assistantText || '왼쪽에서 프롬프트 ID를 선택하면 전용 작성 가이드라인이 이곳에 노출됩니다.'}
                                     </div>
                                 </div>    
                             )}
@@ -527,15 +680,152 @@ export default function CommonPromptForm({ groupId, mode = 'CREATE', initialRowD
                             {activeTab === 'VALIDATE' && (    
                                 <div style={{ backgroundColor: '#f0f7ff', borderLeft: '5px solid #4a90e2', padding: '16px', borderRadius: '4px', boxSizing: 'border-box' }}>
                                     <div style={{ fontSize: '13px', color: '#4a6b9d', whiteSpace: 'pre-wrap', lineHeight: '1.6'}}>
-                                        {validateText || '아이템 ID를 선택하면 LLM이 체크할 자체 유효성 검사 요약 개요가 노출됩니다.'}
+                                        {validateText || '에이젼트 ID를 선택하면 LLM이 체크할 자체 유효성 검사 요약 개요가 노출됩니다.'}
                                     </div>
                                 </div>
+                            )}                            
+
+                            {/* [3번 탭: OPTIONS] 활성화 시 작동 */}
+                            {activeTab === 'LLM_OPTIONS' && (    
+                                <div style={{ backgroundColor: '#f6f5ff', borderLeft: '5px solid #6b5ced', padding: '16px', borderRadius: '4px', boxSizing: 'border-box' }}>
+                                    
+                                    {/* 📌 [고도화 3] 0.00 단위 입력 가능한 숫자형 항목 2개 추가 (나란히 배치) */}
+                                    <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
+                                        {/* 환각 임계치 입력구역 */}
+                                        <div style={{ flex: 1 }}>
+                                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: '#4a5568' }}>
+                                            NIST 환각 임계치
+                                            </label>
+                                            <input 
+                                                type="number" 
+                                                name="nistHallucinationThreshold" 
+                                                value={promptManager.nistHallucinationThreshold} 
+                                                ref={nistHallucinationThresholdRef} 
+                                                onChange={handleInputChange}
+                                                step="0.05"
+                                                min="0"
+                                                max="1"
+                                                placeholder="0.75"
+                                                style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} 
+                                                defaultValue="0" 
+                                            />
+                                            <span style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: '#718096', lineHeight: '1.4' }}>
+                                            * 범위: 0.0 ~ 1.0 (권장: 0.75)<br />높을수록 원문 대조가 엄격해져 환각을 방지합니다.
+                                            </span>
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: '#4a5568' }}>
+                                            NIST 유해성 임계치
+                                            </label>
+                                            <input 
+                                                type="number" 
+                                                name="nistToxicityThreshold" 
+                                                value={promptManager.nistToxicityThreshold} 
+                                                ref={nistToxicityThresholdRef} 
+                                                onChange={handleInputChange}
+                                                step="0.05"
+                                                min="0"
+                                                max="1"
+                                                placeholder="0.30"
+                                                style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #cbd5e1', boxSizing: 'border-box' }} 
+                                                defaultValue="0" 
+                                            />
+                                            <span style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: '#718096', lineHeight: '1.4' }}>
+                                            * 범위: 0.0 ~ 1.0 (권장: 0.30)<br />이 값보다 독성 점수가 높으면 출력을 사전 차단합니다.
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* 활성 유무 체크박스 */}
+                                    <div style={{ marginBottom: '24px' }}>
+                                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: '6px', color: '#4a5568' }}>활성 유무</label>
+                                        <label className={`checkbox-container ${mode === 'CREATE' ? 'disabled' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: mode === 'CREATE' ? 'not-allowed' : 'pointer' }}>
+                                            <input 
+                                                type="checkbox" 
+                                                name="isActive" 
+                                                checked={promptManager.isActive}
+                                                onChange={handleInputChange}
+                                                disabled={mode === 'CREATE'} 
+                                            />
+                                            <span style={{ fontSize: '14px', color: '#4a5568' }}>
+                                                {promptManager.isActive ? '사용 (True)' : '미사용 (False)'}
+                                            </span>
+                                        </label>
+                                    </div>
+
+                                    <div className="ag-theme-alpine" style={{ height: '177px', width: '100%', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+                                    <AgGridReact
+                                        rowData={promptOptions}
+                                        columnDefs={columnDefs}     
+                                        defaultColDef={defaultColDef}                               
+                                        rowSelection={{ mode: 'singleRow', checkboxes: false, headerCheckbox: false}}
+                                        pagination={false}                                                           
+                                        getRowId={(params) => params.data.commonItemId}
+                                        onCellValueChanged={(params) =>{
+                                            console.log('실시간 셀 수정 감지 완료:', params.data);
+                                            // 필요시 부모 컴포넌트의 전송 데이터 핸들러와 매핑 연동
+
+                                            if (!params.api) return;
+
+                                            const updatedRows = [];
+                                            // 그리드에 표시된 최신 로우 데이터들을 전부 긁어모읍니다.
+                                            params.api.forEachNode((node) => {
+                                                updatedRows.push(node.data);
+                                            });
+
+                                            // 변경된 최신 3건의 옵션 데이터를 React 상태(State)에 덮어씌웁니다.
+                                            setPromptOptions(updatedRows);
+
+                                        }}             
+                                        onGridReady={onGridGroupReady}
+                                    />
+                                                                
+                                </div>
+
+                                    {/* 가이드 라인 목록 (핵심 키워드 뒤에서 깔끔하게 줄바꿈 처리) */}
+    <div className="space-y-2">
+        <div className="flex flex-col sm:flex-row items-start">
+            <span className="font-bold text-blue-600 min-w-[80px] inline-block">• 첫 번째 행</span>
+            <span>
+                : <strong className="text-gray-700">TYPE_A (대형 요약 분석)</strong>
+                <br />
+                <span className="text-gray-400 mx-1">-</span> 금융 보고서의 요약문/재무제표 등 대용량 팩트 기반 정밀 요약 옵션
+            </span>
+        </div>
+        <div className="flex flex-col sm:flex-row items-start">
+            <span className="font-bold text-emerald-600 min-w-[80px] inline-block">• 두 번째 행</span>
+            <span>
+                : <strong className="text-gray-700">TYPE_B (중형 분석)</strong>
+                <br />
+                <span className="text-gray-400 mx-1">-</span> 일반적인 리서치 본문 및 분석 섹션 처리를 위한 표준 옵션
+            </span>
+        </div>
+        <div className="flex flex-col sm:flex-row items-start">
+            <span className="font-bold text-amber-600 min-w-[80px] inline-block">• 세 번째 행</span>
+            <span>
+                : <strong className="text-gray-700">TYPE_C (소형 분석)</strong>
+                <br />
+                <span className="text-gray-400 mx-1">-</span> 목차, 개요, 부록 등 분량이 적은 단순 서술형 섹션의 고속 처리 옵션
+            </span>
+        </div>
+    </div>
+
+
+
+
+                                
+
+                                </div>
+
+                                
                             )}                            
                         </>
                         );
                     })()}
                     
                     </div>
+
+                    
 
               </div>
             </div>

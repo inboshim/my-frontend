@@ -7,11 +7,12 @@ export default function CommonGroupForm({ groupId, mode = 'CREATE', initialRowDa
 
     const commonGroupIdRef = useRef(null);
     const commonGroupNameRef = useRef(null);    
+    const commonGroupTypeRef = useRef('TEXT');    
 
     // 🌟 [이동 완료] 입력 폼 데이터 상태를 자식 내부에서 직접 관리
     const [commonGroupCode, setCommonGroupCode] = useState(
     mode === 'CREATE' 
-        ? { commonGroupSeq:'', commonGroupId: '', commonGroupName: '', isUse: true }
+        ? { commonGroupSeq:null, commonGroupId: '', commonGroupName: '', commonGroupType: 'TEXT', isUse: true }
         : initialRowData // 수정 모드일 때는 부모가 넘겨준 행 데이터 적용
     );
 
@@ -40,6 +41,10 @@ export default function CommonGroupForm({ groupId, mode = 'CREATE', initialRowDa
         if (filteredValue.length <= 100) {
           setCommonGroupCode(prev => ({ ...prev, [name]: filteredValue }));
         }
+      }
+
+      if (name === 'commonGroupType') {
+        setCommonGroupCode(prev => ({ ...prev, [name]: value }));
       }
     };
     
@@ -158,6 +163,37 @@ export default function CommonGroupForm({ groupId, mode = 'CREATE', initialRowDa
                     onChange={handleInputChange}
                     placeholder="예: 시스템 유형 코드"
                 />
+                </div>
+
+                {/* 🚨 [새로 추가] 그룹 유형 구분 지정을 위한 select 박스 구역 */}
+                <div className="modal-form-group" style={{ marginBottom: '20px' }}>
+                    <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', fontWeight: '500', color: '#4a5568' }}>
+                        그룹 유형 구분
+                    </label>
+                    <select 
+                        name="commonGroupType" 
+                        value={commonGroupCode.commonGroupType} 
+                        ref={commonGroupTypeRef} 
+                        onChange={handleInputChange} 
+                        style={{ 
+                            width: '100%', 
+                            padding: '10px', 
+                            borderRadius: '4px', 
+                            border: '1px solid #cbd5e1', 
+                            backgroundColor: '#ffffff',
+                            color: '#334155',
+                            fontSize: '14px',
+                            boxSizing: 'border-box',
+                            cursor: 'pointer',
+                            outline: 'none'
+                        }}
+                    >
+                        <option value="TEXT">프롬프트(TEXT)</option>
+                        <option value="OPTION">LLM 엔진 & NIST(OPTION)</option>
+                    </select>
+                    <span style={{ display: 'block', marginTop: '4px', fontSize: '11px', color: '#718096', lineHeight: '1.4' }}>
+                        * 유형을 'OPTION'으로 선택하면 해당 그룹 코드는 하이퍼파라미터 수치 제어 마스터로 격리 분리됩니다.
+                    </span>
                 </div>
 
                 {/* 사용 유무 체크박스 */}

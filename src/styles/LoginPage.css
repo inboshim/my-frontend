@@ -1,27 +1,33 @@
 /* src/styles/LoginPage.css */
 
+
 .login-container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  /* 메인 사이드바와 통일감을 주는 딥 네이비 그라데이션 배경 */
+
   background: linear-gradient(135deg, #0f1222 0%, #1a1f36 100%);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.login-card {
-  width: 100%;
-  max-width: 420px;
-  padding: 45px 40px;
-  border-radius: 16px;
-  /* 유리막 느낌의 은은한 다크 카드 디자인 */
-  background-color: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
-  text-align: center;
+.login-card.login-card {
+    width: 480px !important;
+    max-width: 480px !important; /* ⚡ 100%에서 420px로 꼭 고쳐주셔야 줄어듭니다! */
+    box-sizing: border-box !important;
+    
+    padding: 45px 40px;
+    border-radius: 16px;    
+    
+    background-color: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
 }
+
 
 .login-title {
   margin: 0 0 8px 0;

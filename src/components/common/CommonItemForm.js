@@ -5,9 +5,10 @@ import { isInvalidOrZeroLess } from '../../utils/validation';
 const API_BASE_URL = process.env.REACT_APP_API_URL;
 
 // 💡 부모로부터는 오직 '시작할 때 필요한 그룹 ID'와 '종료 콜백'만 받습니다.
-export default function CommonItemForm({ groupId, mode = 'CREATE', initialRowData, onSaveResult, onClose }) {
+export default function CommonItemForm({ groupId, groupType, mode = 'CREATE', initialRowData, onSaveResult, onClose }) {
   
   const commonGroupIdRef = useRef(null);
+  const commonGroupTypeRef = useRef(null);
   const commonItemIdRef = useRef(null);
   const commonItemNameRef = useRef(null);
   const commonItemOrderRef = useRef(null);
@@ -17,9 +18,10 @@ export default function CommonItemForm({ groupId, mode = 'CREATE', initialRowDat
   const [activeTab, setActiveTab] = useState("GUIDE");  
 
   // 🌟 [이동 완료] 입력 폼 데이터 상태를 자식 내부에서 직접 관리
-  const [commonItemCode, setCommonItemCode] = useState(
+  const [commonItemCode, setCommonItemCode] = useState(    
+
     mode === 'CREATE' 
-      ? { common_item_seq: null, commonGroupId: groupId, commonItemId: '', commonItemName: '', commonItemOrder: 0, isUse: true, commonPromptAssistText:"", commonPromptValidateText:"" }
+      ? { commonItemSeq: null, commonGroupId: groupId, commonGroupType: groupType, commonItemId: '', commonItemName: '', commonItemOrder: 0, isUse: true, commonPromptAssistText:"", commonPromptValidateText:"" }
       : initialRowData // 수정 모드일 때는 부모가 넘겨준 행 데이터 적용
   );
   
@@ -95,18 +97,24 @@ export default function CommonItemForm({ groupId, mode = 'CREATE', initialRowDat
       return; 
     }   
 
-    // [체크 2-2] 시스템 프롬프트 도움 텍스트
-    if (!commonItemCode.commonPromptAssistText.trim()) {
-      alert('시스템 프롬프트 도움 문구 가이드 라인을 작성해 주세요.');
-      commonPromptAssistTextRef.current.focus(); // 🌟 Group Name 창으로 포커스 이동
-      return;
-    }    
+    // [체크 2-2] 시스템 프롬프트 도움 텍스트 (안전장치 완비)
+    if (commonItemCode.commonPromptAssistText && !commonItemCode.commonPromptAssistText.trim()) {
+        alert('시스템 프롬프트 도움 문구 가이드 라인을 작성해 주세요.');
+        if (commonPromptAssistTextRef.current) {
+            commonPromptAssistTextRef.current.focus();
+        }
+        return;
+    }
 
-    // [체크 2-2] 시스템 프롬프트 유효성 텍스트
-    if (!commonItemCode.commonPromptValidateText.trim()) {
-      alert('시스템 프롬프트 도움 문구 가이드 라인을 작성해 주세요.');
-      commonPromptValidateTextRef.current.focus(); // 🌟 Group Name 창으로 포커스 이동
-      return;
+    if(groupType === "TEXT"){
+      // [체크 2-2] 시스템 프롬프트 유효성 텍스트 (안전장치 완비)
+      if (commonItemCode.commonPromptValidateText && !commonItemCode.commonPromptValidateText.trim()) {
+        alert('시스템 프롬프트 도움 문구 가이드 라인을 작성해 주세요.');
+        if (commonPromptValidateTextRef.current) {
+          commonPromptValidateTextRef.current.focus();
+        }
+        return;
+      }
     }    
 
     console.log("서버 전송 데이타 ::: ", commonItemCode);

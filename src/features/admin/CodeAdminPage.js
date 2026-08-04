@@ -13,6 +13,7 @@ export default function CodeAdminPage() {
   const [groupRows, setGroupRows] = useState([]); // 좌측 마스터 그룹 데이터 스토어
   const [itemRows, setItemRows] = useState([]);   // 우측 디테일 아이템 데이터 스토어
   const [selectedGroupId, setSelectedGroupId] = useState(null); 
+  const [selectedGroupType, setSelectedGroupType] = useState(null); 
   const [selectedItemId, setSelectedItemId] = useState(null); 
   const [loading, setLoading] = useState(false);
   const [groupGridApi, setGroupGridApi] = useState(null);
@@ -39,24 +40,27 @@ export default function CodeAdminPage() {
 
   // 기본적으로 State 값을 먼저 보되, 비어있다면 그리드 API에서 직접 꺼냅니다.
   let currentGroupId = selectedGroupId;
+  let currentGroupType = selectedGroupType;  
   
-  if (!currentGroupId && groupGridApi) {
+  if (!currentGroupId && !currentGroupType && groupGridApi) {
     const selectedRows = groupGridApi.getSelectedRows();     
     
     if (selectedRows && selectedRows.length > 0) {
       // 데이터 구조에 따라 commonGroupId 또는 commonGroupId 중 맞는 키값을 입력하세요.
       currentGroupId = selectedRows[0].commonGroupId || selectedRows[0].commonGroupId; 
+      currentGroupType = selectedRows[0].commonGroupType || selectedRows[0].commonGroupType; 
     }
   }
 
-  if (!currentGroupId) {
+  if (!currentGroupId && !currentGroupType) {
     alert('좌측에서 먼저 그룹을 선택해 주세요.');
     return;
   }
   
   // 🌟 [핵심 변경] 부모의 selectedGroupId 상태를 안전하게 가로챈 ID로 갱신해 둡니다.
   setSelectedGroupId(currentGroupId); 
-  
+  setSelectedGroupType(currentGroupType);   
+
   // 🌟 부모는 오직 모드 세팅과 모달 레이어 스위치만 ON 합니다. (나머지 세팅은 자식이 함)
   setCommonItemCodeModalMode('CREATE');
   setIsCommonItemCodeModalOpen(true);  
@@ -99,14 +103,15 @@ export default function CodeAdminPage() {
   };
 
   // 3. 백엔드에서 공통 그룹 마스터 목록 호출
-  const fetchItemCodes = async (groupCodeId, searchId, searchName) => {
+  const fetchItemCodes = async (groupId, groupType, searchId, searchName) => {
 
     try {
       setLoading(true);      
 
       const response = await axios.get(`${API_BASE_URL}/api/admin/code/code-item/get_all`, {
           params : {
-            commonGroupId : groupCodeId,
+            commonGroupId : groupId,
+            commonGroupType : groupType,
             commonItemId : searchId,
             commonItemName : searchName,
             isUse : null,
@@ -145,6 +150,9 @@ export default function CodeAdminPage() {
 
       const commonGroupId = event.data.commonGroupId;
       handleGroupSelection(commonGroupId);
+      const commonGroupType = event.data.commonGroupType;
+      handleGroupTypeSelection(commonGroupType);
+
       fetchItemCodes(commonGroupId, "", "");
 
       clickTimer = null;
@@ -248,6 +256,7 @@ const onItemRowDoubleClick = (event) => {
         if (rowNode) {
             rowNode.setSelected(true);            
             setSelectedGroupId(rowNode.data.commonGroupId); 
+            setSelectedGroupType(rowNode.data.commonGroupType); 
             return; // 찾아서 선택했다면 종료
         }
     }
@@ -257,6 +266,7 @@ const onItemRowDoubleClick = (event) => {
     if (firstRowNode) {
         firstRowNode.setSelected(true);
         setSelectedGroupId(firstRowNode.data.commonGroupId);         
+        setSelectedGroupType(firstRowNode.data.commonGroupType);         
 
         //첫번째 선택일 때 강제 onGroupRowClick 발생 시킴.
         if (typeof onGroupRowClick === 'function') {
@@ -290,6 +300,12 @@ const onRowDataItemUpdated = (params) => {
   const handleGroupSelection = (commonGroupId) => {
     if (!commonGroupId) return;
     setSelectedGroupId(commonGroupId); // ID 상태 저장
+    
+  };
+
+  const handleGroupTypeSelection = (commonGroupType) => {
+    if (!commonGroupType) return;
+    setSelectedGroupType(commonGroupType); // ID 상태 저장
     
   };
 
@@ -382,6 +398,7 @@ const onRowDataItemUpdated = (params) => {
                   type="button" 
                   className="btn-add-group"
                   onClick={() => {                    
+
                     setCommonGroupCodeModalMode('CREATE');
                     setIsCommonGroupCodeModalOpen(true);
                   }} 
@@ -493,7 +510,7 @@ const onRowDataItemUpdated = (params) => {
               {/* 🔍 아이템 조건 검색 실행 버튼 */}
               <button 
                 type="button"
-                onClick={() => fetchItemCodes(selectedGroupId, searchItemId, searchItemName)} 
+                onClick={() => fetchItemCodes(selectedGroupId, selectedGroupType, searchItemId, searchItemName)} 
                 style={{ padding: '6px 16px', backgroundColor: '#4a5568', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap' }}
               >
                 조회
@@ -518,6 +535,7 @@ const onRowDataItemUpdated = (params) => {
           {isCommonItemCodeModalOpen && (
             <CommonItemForm 
               groupId={selectedGroupId}           
+              groupType={selectedGroupType}
               mode={commonItemCodeModalMode}           
               initialRowData={selectedItemRowData}          
               onClose={() => setIsCommonItemCodeModalOpen(false)}
@@ -525,7 +543,7 @@ const onRowDataItemUpdated = (params) => {
                 if (isSuccess) {
                   // itemGridApi.refreshServerSide(); ➔ 성공 시 우측 그리드 새로고침 로직 기술
                   
-                  fetchItemCodes(selectedGroupId, searchItemId, searchItemName);
+                  fetchItemCodes(selectedGroupId, selectedGroupType, searchItemId, searchItemName);
                   setIsCommonItemCodeModalOpen(false); 
                 }
               }}

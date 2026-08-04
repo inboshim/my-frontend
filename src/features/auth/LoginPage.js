@@ -25,9 +25,17 @@ function LoginPage() {
   };
 
   return (
-    <div className="login-container">
-      <div className="login-card">
-        <h2 className="login-title">🚀 My AI 플랫폼</h2>
+    <div className="login-container"      
+    >
+      <div className="login-card"
+        style={{ 
+        width: '420px', 
+        maxWidth: '420px', 
+        flexDirection: 'column', 
+        alignItems: 'stretch' 
+      }}
+      >
+        <h2 className="login-title">🚀 AI 금융 리서치 영문 요약 플랫폼</h2>
         <p className="login-subtitle">포트폴리오 평가를 위한 데모 로그인 페이지입니다.</p>
 
         <form onSubmit={handleLogin} className="login-form">

@@ -106,3 +106,41 @@ div[class*="-card"] {
 .card-status-timeout .btn-source:hover { 
   background-color: #343a40 !important; 
 }
+
+
+/* 🚨 [AG-Grid v32 쓰기 모드 강제 활성화] 
+   셀을 선택하거나 편집 모드로 들어갔을 때, 텍스트 인풋창이 겉으로 보이지 않고 
+   배경색에 묻히거나 테두리가 깨져서 쓰기가 안 되는 현상을 물리적으로 교정합니다. */
+
+.ag-theme-alpine .ag-cell-inline-editing {
+    background-color: #ffffff !important;
+    color: #334155 !important;
+    border: 2px solid #6b5ced !important; /* 탭 포인트 색상인 보라색으로 포커스 테두리 고정 */
+    border-radius: 4px !important;
+    padding: 2px 4px !important;
+    height: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* 편집 모드 안의 실제 input 글자 상자가 100% 가득 차도록 제어 */
+.ag-theme-alpine .ag-cell-inline-editing input {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    width: 100% !important;
+    height: 100% !important;
+    text-align: center !important;
+    font-size: 13px !important;
+    color: #334155 !important;
+}
+
+/* 드롭다운 셀렉트 박스 에디터가 켜졌을 때 레이아웃 정돈 */
+.ag-theme-alpine .ag-select-cell-editor {
+    background-color: #ffffff !important;
+    border: 2px solid #6b5ced !important;
+    border-radius: 4px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #334155 !important;
+    text-align: center !important;
+}
